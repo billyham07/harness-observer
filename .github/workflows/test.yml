@@ -1,0 +1,90 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+env:
+  DUCKDB_VERSION: '1.4.1'
+
+jobs:
+  go-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+
+      # Node and npm are build-time only. They are set up here rather than in a
+      # separate job because the Go build embeds the generated bundle: passing
+      # it between jobs as an artifact would only add a way for the binary to
+      # be tested against assets that are not the ones just built.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: npm
+          cache-dependency-path: webui/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: webui
+        run: npm ci
+
+      # Typecheck and the frontend suite are platform independent, so one job
+      # runs them.
+      - name: Typecheck frontend
+        if: matrix.os == 'ubuntu-latest'
+        working-directory: webui
+        run: npm run typecheck
+
+      - name: Test frontend
+        if: matrix.os == 'ubuntu-latest'
+        working-directory: webui
+        run: npm test -- --run
+
+      # Must precede every Go step: internal/web embeds this output, and the
+      # dashboard tests assert against the real bundle.
+      - name: Build frontend
+        working-directory: webui
+        run: npm run build
+
+      # DuckDB is linked dynamically against the official release library.
+      # The static libraries in duckdb-go-bindings are built against a
+      # libstdc++ that uses emulated TLS and do not link with current MinGW
+      # (undefined __emutls_v._ZSt11__once_call); only the C API crosses the
+      # boundary here, so the release library links with any toolchain.
+      - name: Fetch DuckDB
+        run: scripts/fetch-duckdb.sh "$DUCKDB_VERSION"
+
+      - name: Export toolchain environment
+        run: |
+          echo "CGO_ENABLED=1" >> "$GITHUB_ENV"
+          echo "CGO_LDFLAGS=-L${GITHUB_WORKSPACE}/third_party/duckdb -lduckdb" >> "$GITHUB_ENV"
+          echo "GOFLAGS=-tags=duckdb_use_lib" >> "$GITHUB_ENV"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            echo "${GITHUB_WORKSPACE}/third_party/duckdb" >> "$GITHUB_PATH"
+          else
+            echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/third_party/duckdb" >> "$GITHUB_ENV"
+          fi
+
+      # Formatting is platform independent, so one job checks it. Keeping it off
+      # Windows also keeps a line-ending mishap from masquerading as a
+      # formatting failure across every file at once.
+      - name: gofmt
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "$unformatted"
+            exit 1
+          fi
+      - run: go vet ./...
+      - run: go test ./...
+      - run: go build -o harness-observer-build-check ./cmd/harness-observer

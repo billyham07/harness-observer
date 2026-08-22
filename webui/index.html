@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>harness-observer</title>
+<script>
+// Resolve the stored theme before the first paint. Doing this in the app would
+// show a light flash on a dark desktop, which on an instrument that people
+// leave open all day is the most visible bug in the product.
+(function () {
+  try {
+    var choice = localStorage.getItem('ho-theme') || 'auto';
+    var dark = choice === 'dark' || (choice === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  } catch (e) { /* private mode: the default attribute stands */ }
+})();
+</script>
+</head>
+<body>
+<div id="app"></div>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

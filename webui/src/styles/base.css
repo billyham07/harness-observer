@@ -1,0 +1,462 @@
+/* Element defaults and the handful of primitives more than one component
+ * needs. Anything owned by a single component lives in that component's
+ * scoped block instead, which is the whole reason this file stays short. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 13.5px/1.5 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-1);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* --- voice ------------------------------------------------------------- */
+
+/* The instrument's labelling: small, uppercase, widely tracked, recessive.
+ * It names a reading; it never competes with one. */
+.eyebrow {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* Every number in the product is monospace with tabular figures, so a column
+ * of digits lines up and a value never changes width as it ticks. */
+.num {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.faint {
+  color: var(--faint);
+}
+
+/* An unrecorded value stays visible as unknown instead of being folded into a
+ * neighbouring one, so it is styled, not hidden. */
+.unknown {
+  color: var(--faint);
+  font-style: italic;
+}
+
+/* --- surfaces ---------------------------------------------------------- */
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  box-shadow: var(--shadow-1);
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.panel-head h2 {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.panel-note {
+  padding: 10px 16px 14px;
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--faint);
+}
+
+.empty {
+  padding: 22px 16px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+/* --- controls ---------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.btn:hover {
+  background: var(--surface-2);
+  border-color: var(--muted);
+}
+
+.btn[disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn-primary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  opacity: 0.88;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+.btn-ghost:hover {
+  background: var(--surface-3);
+  border-color: transparent;
+  color: var(--ink);
+}
+
+.btn.on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+/* --- tables ------------------------------------------------------------ */
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table.grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+/* Tight on purpose: a comparison table with fourteen columns either fits the
+ * window or is read by dragging, and the padding is the cheapest column width
+ * to give back. */
+table.grid th,
+table.grid td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--line-soft);
+  white-space: nowrap;
+}
+
+table.grid thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  text-align: right;
+  cursor: pointer;
+  user-select: none;
+}
+
+table.grid thead th.text {
+  text-align: left;
+}
+
+table.grid thead th.sorted {
+  color: var(--ink);
+}
+
+table.grid tbody tr:hover td {
+  background: var(--surface-2);
+}
+
+table.grid td.num {
+  text-align: right;
+  color: var(--ink);
+}
+
+table.grid td.text {
+  color: var(--ink);
+}
+
+/* Cost columns are estimates at published rates, never billed spend, so they
+ * are set apart from the token evidence beside them by a rule, not a colour. */
+table.grid th.cost,
+table.grid td.cost {
+  color: var(--muted);
+}
+
+table.grid th.cost:first-of-type,
+table.grid td.cost:first-of-type {
+  border-left: 1px solid var(--line);
+}
+
+table.grid td.warn {
+  color: var(--warn);
+}
+
+table.grid td.partial::after {
+  content: '*';
+  margin-left: 2px;
+  color: var(--muted);
+}
+
+/* The first dimension cell carries a share bar behind the label: the ranking
+ * is readable without reading a single number. */
+td.share {
+  position: relative;
+}
+
+td.share .bar {
+  position: absolute;
+  left: 0;
+  top: 3px;
+  bottom: 3px;
+  background: var(--accent-soft);
+  border-radius: 0 var(--r-1) var(--r-1) 0;
+  pointer-events: none;
+}
+
+td.share > span.v {
+  position: relative;
+}
+
+/* A fourteen-column table will still overflow on a narrow window. The label
+ * column stays put while the numbers scroll under it, so a row read from the
+ * right-hand edge is still attributable to something. */
+table.grid th:first-child,
+table.grid td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface);
+  border-right: 1px solid var(--line-soft);
+}
+
+table.grid thead th:first-child {
+  z-index: 3;
+}
+
+/* --- legends ----------------------------------------------------------- */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  align-items: center;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.legend-key {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex: none;
+}
+
+/* --- motion ------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+}
+
+/* --- filter controls --------------------------------------------------- */
+
+/* One shape for every filter entry point, so "what is narrowing the numbers"
+ * is answered by a single row of controls that all read the same way. */
+.control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  max-width: 290px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    background-color 0.12s ease;
+}
+
+.control:hover {
+  border-color: var(--muted);
+}
+
+.control-label {
+  flex: none;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.control-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* An active control says so on its own, so the row can be scanned without
+ * reading every value. */
+.control.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.control.active .control-label {
+  color: var(--muted);
+}
+
+.caret {
+  flex: none;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid var(--faint);
+}
+
+.pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.pop-body {
+  padding: 10px 12px 12px;
+}
+
+.pop-hint {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--faint);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: var(--r-1);
+  cursor: pointer;
+  font-size: 12.5px;
+}
+
+.option:hover {
+  background: var(--surface-2);
+}
+
+.option .name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.option .count {
+  flex: none;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.option.stale .name {
+  text-decoration: line-through;
+  color: var(--faint);
+}
+
+.options {
+  max-height: 320px;
+  overflow: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control {
+    transition: none;
+  }
+}

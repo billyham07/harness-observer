@@ -1,0 +1,110 @@
+/* harness-observer — design tokens.
+ *
+ * The look is a field instrument, not a dashboard template. Two rules do most
+ * of the work:
+ *
+ *  1. Colour is a data channel. The four token buckets own every saturated
+ *     hue on screen; the chassis around them is graphite and paper, and the
+ *     one chrome accent is deliberately desaturated so it can never be
+ *     mistaken for a bucket.
+ *  2. Numbers are set in monospace at every size, from the 44px headline
+ *     readout down to a table cell, with tabular figures so columns of digits
+ *     line up. Labels are the opposite voice: small, uppercase, widely
+ *     tracked, quiet.
+ *
+ * Theme is resolved to an explicit data-theme attribute before first paint, so
+ * every token has one definition per theme instead of a media-query copy that
+ * can drift.
+ */
+
+:root {
+  color-scheme: light;
+
+  --bg: #eef0f4;
+  --surface: #ffffff;
+  --surface-2: #f6f8fb;
+  --surface-3: #eaedf3;
+  --line: #d8dde6;
+  --line-soft: #e7eaf0;
+  --ink: #0d1220;
+  --muted: #5a667a;
+  --faint: #808da0;
+
+  /* The chassis accent: desaturated on purpose. It marks the active page and
+   * draws the focus ring, and never appears inside a plot. */
+  --accent: #41506b;
+  --accent-soft: rgba(65, 80, 107, 0.1);
+  --on-accent: #ffffff;
+
+  --warn: #8a5b0a;
+  --warn-soft: rgba(138, 91, 10, 0.12);
+  --error: #a8261c;
+  --error-soft: rgba(168, 38, 28, 0.1);
+  --ok: #0f7050;
+
+  /* Token buckets — mirrored in src/lib/palette.ts, asserted by a unit test. */
+  --c-input: #2563c9;
+  --c-read: #0f9a7a;
+  --c-write: #b0499e;
+  --c-output: #b4700f;
+
+  --shadow-1: 0 1px 2px rgba(13, 18, 32, 0.06);
+  --shadow-2: 0 1px 2px rgba(13, 18, 32, 0.05), 0 10px 28px rgba(13, 18, 32, 0.08);
+
+  --r-1: 4px;
+  --r-2: 7px;
+  --r-3: 10px;
+
+  --sans: ui-sans-serif, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
+  --mono: ui-monospace, 'Cascadia Mono', 'SF Mono', 'JetBrains Mono', 'DejaVu Sans Mono', Consolas,
+    monospace;
+
+  --rail: 208px;
+  --gutter: 20px;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #0c1119;
+  --surface: #10161f;
+  --surface-2: #151c26;
+  --surface-3: #1b232f;
+  --line: #232c39;
+  --line-soft: #1a212c;
+  --ink: #e6ebf2;
+  --muted: #8695a8;
+  --faint: #67768c;
+
+  --accent: #9db0ce;
+  --accent-soft: rgba(157, 176, 206, 0.14);
+  --on-accent: #0c1119;
+
+  --warn: #d9a05a;
+  --warn-soft: rgba(217, 160, 90, 0.14);
+  --error: #f0736a;
+  --error-soft: rgba(240, 115, 106, 0.13);
+  --ok: #3cbf94;
+
+  --c-input: #4b82e6;
+  --c-read: #12a181;
+  --c-write: #be5ca8;
+  --c-output: #be7f1e;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.5), 0 14px 34px rgba(0, 0, 0, 0.45);
+}
+
+.k-input {
+  background: var(--c-input);
+}
+.k-read {
+  background: var(--c-read);
+}
+.k-write {
+  background: var(--c-write);
+}
+.k-output {
+  background: var(--c-output);
+}

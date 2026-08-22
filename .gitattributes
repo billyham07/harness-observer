@@ -1,0 +1,16 @@
+# Check everything out with LF, on every platform.
+#
+# Go source is defined to use LF and gofmt enforces it, so a Windows checkout
+# that converts to CRLF makes every file look unformatted. Pinning it here also
+# keeps the shell scripts runnable from a Windows checkout.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.zip binary
+*.dll binary
+*.lib binary
+*.so binary
+*.dylib binary
+*.duckdb binary
+*.db binary

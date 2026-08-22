@@ -1,0 +1,107 @@
+name: release
+
+# Cut a release by pushing a tag:
+#
+#   git tag v0.1.0 && git push origin v0.1.0
+#
+# That also triggers the test workflow, so tag a commit that is already green
+# on main rather than relying on this job to find out.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to build and publish (e.g. v0.1.0)'
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  DUCKDB_VERSION: '1.4.1'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: npm
+          cache-dependency-path: webui/package-lock.json
+
+      # One script builds the frontend, links the binary against the DuckDB
+      # release library, stamps the version and zips the pair. It is the same
+      # script a person runs locally, so the artifact is reproducible.
+      - name: Package
+        run: scripts/package-release.sh "${{ inputs.tag || github.ref_name }}"
+
+      # Unpack what is about to be published and ask it what it is. This is the
+      # step that catches a binary that did not get the version stamp, or one
+      # that cannot find the DuckDB library shipped beside it.
+      - name: Smoke-test the archive
+        run: |
+          version="${{ inputs.tag || github.ref_name }}"
+          archive="$(ls dist/*.zip)"
+          python -c "import sys, zipfile; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])" "$archive" dist/check
+          folder="$(ls -d dist/check/*/)"
+          binary="${folder}harness-observer"
+          [ -f "$binary" ] || binary="${folder}harness-observer.exe"
+          chmod +x "$binary"
+          reported="$("$binary" version)"
+          echo "$reported"
+          case "$reported" in
+            "harness-observer $version"*) ;;
+            *) echo "the packaged binary does not report $version" >&2; exit 1 ;;
+          esac
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: harness-observer-${{ matrix.os }}
+          path: dist/*.zip
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      # gh is preinstalled on the runners, so publishing needs no third-party
+      # action. Re-running the workflow for the same tag replaces the assets
+      # instead of failing on an existing release.
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          ls -l artifacts
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" artifacts/*.zip --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" artifacts/*.zip \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$TAG" \
+              --generate-notes
+          fi

@@ -1,0 +1,197 @@
+{
+  "title": "harness-observer",
+  "uid": "harness-observer",
+  "tags": [
+    "harness-observer",
+    "agents"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5m",
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "harness",
+        "label": "Harness",
+        "type": "query",
+        "datasource": {
+          "type": "frser-sqlite-datasource",
+          "uid": "${datasource}"
+        },
+        "multi": true,
+        "includeAll": true,
+        "query": "SELECT DISTINCT harness FROM agent_turns ORDER BY harness",
+        "refresh": 1
+      },
+      {
+        "name": "datasource",
+        "label": "SQLite datasource",
+        "type": "datasource",
+        "query": "frser-sqlite-datasource"
+      },
+      {
+        "name": "strict",
+        "label": "Exclude estimated evidence",
+        "type": "custom",
+        "query": "usage_basis <> 'estimated',1=1",
+        "current": {
+          "text": "usage_basis <> 'estimated'",
+          "value": "usage_basis <> 'estimated'"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Tokens over time by canonical bucket",
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "time series",
+          "timeColumns": [
+            "time"
+          ],
+          "rawQueryText": "SELECT (ts_unix / 3600) * 3600 AS time, SUM(input_tokens) AS \"fresh input\", SUM(cache_read_tokens) AS \"cache read\", SUM(cache_write_tokens) AS \"cache write\", SUM(output_tokens) AS \"output\" FROM agent_turns WHERE ts_unix BETWEEN $__from/1000 AND $__to/1000 AND harness IN ($harness) AND $strict GROUP BY time ORDER BY time"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "Usage by model x harness x reasoning effort",
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "table",
+          "rawQueryText": "SELECT harness, model, COALESCE(reasoning_effort, '(unrecorded)') AS effort, COUNT(*) AS turns, COUNT(DISTINCT session_id) AS sessions, SUM(input_tokens) AS fresh_input, SUM(cache_read_tokens) AS cache_read, SUM(output_tokens) AS output, SUM(prompt_tokens + output_tokens) AS observed_tokens FROM agent_turns WHERE ts_unix BETWEEN $__from/1000 AND $__to/1000 AND harness IN ($harness) AND $strict GROUP BY harness, model, effort ORDER BY observed_tokens DESC"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Cache hit ratio by harness",
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "max": 1,
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "time series",
+          "timeColumns": [
+            "time"
+          ],
+          "rawQueryText": "SELECT (ts_unix / 3600) * 3600 AS time, harness, 1.0 * SUM(cache_read_tokens) / NULLIF(SUM(prompt_tokens), 0) AS cache_hit_ratio FROM agent_turns WHERE ts_unix BETWEEN $__from/1000 AND $__to/1000 AND harness IN ($harness) AND $strict GROUP BY time, harness ORDER BY time"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "Sessions, turns and tools by harness",
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "table",
+          "rawQueryText": "SELECT harness, client, COUNT(DISTINCT session_id) AS sessions, COUNT(*) AS turns, SUM(tool_calls) AS tool_calls, SUM(tool_errors) AS tool_errors FROM agent_turns WHERE ts_unix BETWEEN $__from/1000 AND $__to/1000 AND harness IN ($harness) AND $strict GROUP BY harness, client ORDER BY turns DESC"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "Usage by event kind (nested tool LLM calls, compaction)",
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "table",
+          "rawQueryText": "SELECT harness, event_kind, COUNT(*) AS turns, SUM(prompt_tokens + output_tokens) AS observed_tokens FROM agent_turns WHERE ts_unix BETWEEN $__from/1000 AND $__to/1000 AND harness IN ($harness) AND $strict GROUP BY harness, event_kind ORDER BY observed_tokens DESC"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "table",
+      "title": "Evidence basis (observed vs derived vs estimated)",
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "table",
+          "rawQueryText": "SELECT harness, usage_semantics, usage_basis, COUNT(*) AS turns, SUM(prompt_tokens + output_tokens) AS observed_tokens FROM agent_turns WHERE ts_unix BETWEEN $__from/1000 AND $__to/1000 AND harness IN ($harness) GROUP BY harness, usage_semantics, usage_basis ORDER BY turns DESC"
+        }
+      ]
+    }
+  ]
+}

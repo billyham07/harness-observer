@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>harness-observer — frontend not built</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center;
+    background: #eef0f4; color: #0d1220;
+    font: 14px/1.6 ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 560px; padding: 32px; }
+  h1 { font-size: 17px; margin: 0 0 10px; letter-spacing: -0.01em; }
+  p { margin: 0 0 14px; color: #5a667a; }
+  pre {
+    margin: 0 0 14px; padding: 12px 14px; overflow-x: auto;
+    background: #fff; border: 1px solid #d8dde6; border-radius: 10px;
+    font: 12.5px/1.7 ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #0c1119; color: #e6ebf2; }
+    p { color: #8695a8; }
+    pre { background: #10161f; border-color: #232c39; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>The dashboard has not been built</h1>
+  <p>
+    The API is running and answering on <code>/api/…</code>, but this binary was
+    compiled without the generated frontend in
+    <code>internal/web/assets/dist</code>.
+  </p>
+  <p>Build it, then rebuild the binary:</p>
+  <pre>scripts/build-web.sh          # or: scripts\build-web.ps1
+go build -o bin/harness-observer ./cmd/harness-observer</pre>
+  <p>
+    Node and npm are build-time only. Once the assets are embedded, the binary
+    serves the whole dashboard offline with no Node runtime and no CDN.
+  </p>
+</main>
+</body>
+</html>
