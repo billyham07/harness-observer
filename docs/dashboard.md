@@ -1,22 +1,30 @@
 # Local dashboard
 
 ```bash
-harness-observer web
+harness-observer gpui     # native window (Windows default)
+harness-observer web      # same UI in a browser
 ```
 
-Serves an embedded dashboard on `127.0.0.1:9464` and opens a browser. The same
-process runs incremental ingestion in the background, so a desktop user needs
-neither cron nor Task Scheduler to keep the numbers current. A left rail
-switches between **Overview** (`/`) and **Logs** (`/logs`); Logs is a
-server-paginated event table over [`/api/logs`](logs.md), not a second copy of
-the filters in the browser.
+Both commands serve the embedded dashboard on `127.0.0.1:9464`. `gpui` hosts it
+in a native window (WebView2 on Windows; elsewhere it falls back to a browser).
+`web` always opens a browser. The same process runs incremental ingestion in
+the background, so a desktop user needs neither cron nor Task Scheduler to keep
+the numbers current. A left rail switches between **Overview** (`/`) and
+**Logs** (`/logs`); Logs is a server-paginated event table over
+[`/api/logs`](logs.md), not a second copy of the filters in the browser.
+
+On Windows, a bare `harness-observer` with no arguments is `gpui`. Leading
+flags still belong to `collect`, so `harness-observer --since ...` keeps
+working. Double-clicking the `.exe` from Explorer hides the console window; a
+terminal session keeps it so the URL is visible.
 
 ```text
 --addr              listen address (loopback default; this is data about your machine)
 --db                database path (default: per-user data dir, or $HARNESS_OBSERVER_DB)
 --sources           codex,claude,omp,pi,opencode,grok
 --ingest-interval   background scan interval, 0 disables it (manual refresh still works)
---no-open           do not launch a browser
+--no-open           web only: do not launch a browser
+--debug             program diagnostics on stderr; gpui also enables WebView2 DevTools
 --pricing-refresh   allow the best-effort public price-list download (default true)
 --pricing-overrides explicit per-model rates, a JSON file
 --pricing-heuristic-cache  infer missing cache rates from the input rate (default off)
@@ -178,10 +186,10 @@ semantics in [`pricing.md`](pricing.md).
 
 ## One writer per database
 
-DuckDB locks the database file for the whole process, so `web` and a separate
-`ingest` cannot share a store: the second process fails to open it. `web`
-ingests on its own timer, so a second scheduled job is redundant anyway. See
-[`build.md`](build.md).
+DuckDB locks the database file for the whole process, so `web`/`gpui` and a
+separate `ingest` cannot share a store: the second process fails to open it.
+The dashboard process ingests on its own timer, so a second scheduled job is
+redundant anyway. See [`build.md`](build.md).
 
 ## Reproducible views
 

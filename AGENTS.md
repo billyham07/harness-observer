@@ -80,7 +80,7 @@ Build a local, read-only observability layer for coding-agent harnesses. The pro
 
 ## Frontend
 
-The dashboard source is a Vue 3 + TypeScript app in `webui/`, built by Vite into `internal/web/assets/dist` and embedded with `go:embed`. Vue Router owns page navigation (`/` and `/logs`), AntV G2 owns chart mechanics, Naive UI owns commodity controls.
+The dashboard source is a Vue 3 + TypeScript app in `webui/`, built by Vite into `internal/web/assets/dist` and embedded with `go:embed`. Vue Router owns page navigation (`/` and `/logs`), AntV G2 owns chart mechanics, Naive UI owns commodity controls. On Windows, a bare `harness-observer` hosts that same UI in a native WebView2 window (`gpui`); `web` still serves it in a browser. Do not add a second frontend toolkit to replace Vue.
 
 ### Runtime boundary
 

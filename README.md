@@ -66,8 +66,10 @@ Download a prebuilt archive from the [GitHub Releases](https://github.com/billyh
 ### Windows
 
 ```powershell
-.\harness-observer.exe web
+.\harness-observer.exe
 ```
+
+A bare invocation opens the dashboard in a native WebView2 window (`gpui`). Use `web` to open it in a browser instead.
 
 ### Linux
 
@@ -81,7 +83,7 @@ Then open:
 http://127.0.0.1:9464
 ```
 
-The `web` command owns both incremental background ingestion and the local dashboard, so no cron job, sidecar service, Prometheus stack or Node runtime is required.
+`gpui` and `web` both own incremental background ingestion and the local dashboard, so no cron job, sidecar service, Prometheus stack or Node runtime is required. On Windows, `gpui` is the default command.
 
 Check the build and local store schema with:
 
@@ -163,7 +165,8 @@ See [`docs/pricing.md`](docs/pricing.md).
 ## Commands
 
 ```text
-harness-observer web       local dashboard + background incremental ingest
+harness-observer gpui      native desktop window + background incremental ingest
+harness-observer web       local dashboard in a browser + background incremental ingest
 harness-observer collect   stream normalized turns as NDJSON without storage
 harness-observer ingest    incrementally persist normalized turns to DuckDB
 harness-observer doctor    inspect source discovery/checkpoint health
@@ -222,9 +225,9 @@ macOS    ~/Library/Application Support/harness-observer/harness-observer.duckdb
 
 Override it with `--db` or `HARNESS_OBSERVER_DB`.
 
-DuckDB takes an exclusive writer lock for the process. `web` already ingests on
-a timer, so a second `ingest` against the same database file will fail to open
-it.
+DuckDB takes an exclusive writer lock for the process. `web` and `gpui` already
+ingest on a timer, so a second `ingest` against the same database file will fail
+to open it.
 
 Ingestion is incremental and idempotent. Append-only files resume from checkpoints; truncation/replacement is detected; partially written JSONL records are retried when complete; parser-version changes can rebuild affected evidence without mutating the agent-owned source files.
 
@@ -244,9 +247,9 @@ dashboard or background scanner. It binds to loopback by default:
 /metrics
 ```
 
-`harness-observer web` mounts the same read API and adds ingest status/refresh
-routes (`/api/status`, `/api/refresh`, `/api/pricing/refresh`) plus the embedded
-dashboard.
+`harness-observer web` and `harness-observer gpui` mount the same read API and
+add ingest status/refresh routes (`/api/status`, `/api/refresh`,
+`/api/pricing/refresh`) plus the embedded dashboard.
 
 Prometheus/Grafana remain supported for aggregate observability, but the built-in dashboard is the primary UI. See [`docs/grafana.md`](docs/grafana.md).
 
@@ -268,9 +271,9 @@ Codex / Claude / OMP / Pi / OpenCode / Grok Build
                   DuckDB
              ┌──────┴──────┐
              ▼             ▼
-       local Vue UI    CLI / HTTP API
-             │             │
-             └──────┬──────┘
+    native window / Vue UI    CLI / HTTP API
+             │                     │
+             └──────────┬──────────┘
                     ▼
         comparison / logs / cost
 ```

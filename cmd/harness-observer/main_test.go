@@ -23,24 +23,38 @@ func TestSplitCommandRoutesTopLevelHelp(t *testing.T) {
 }
 
 func TestSplitCommandKeepsDefaultAndSubcommands(t *testing.T) {
-	if command, rest := splitCommand(nil); command != "collect" || len(rest) != 0 {
-		t.Fatalf("splitCommand(nil) = %q, %v", command, rest)
+	wantDefault := "collect"
+	if runtime.GOOS == "windows" {
+		wantDefault = "gpui"
 	}
-	// A non-help leading flag still belongs to the default command.
+	if command, rest := splitCommand(nil); command != wantDefault || len(rest) != 0 {
+		t.Fatalf("splitCommand(nil) = %q, %v; want %q", command, rest, wantDefault)
+	}
+	// A non-help leading flag still belongs to collect, even on Windows, so
+	// existing `harness-observer --since ...` invocations keep working.
 	if command, rest := splitCommand([]string{"--since", "2026-08-20"}); command != "collect" || len(rest) != 2 {
 		t.Fatalf("splitCommand(--since ...) = %q, %v", command, rest)
 	}
 	if command, rest := splitCommand([]string{"web", "--no-open"}); command != "web" || len(rest) != 1 {
 		t.Fatalf("splitCommand(web --no-open) = %q, %v", command, rest)
 	}
+	if command, rest := splitCommand([]string{"gpui", "--debug"}); command != "gpui" || len(rest) != 1 {
+		t.Fatalf("splitCommand(gpui --debug) = %q, %v", command, rest)
+	}
 }
 
 func TestUsageListsEveryCommand(t *testing.T) {
 	var buf bytes.Buffer
 	usage(&buf)
-	for _, command := range []string{"web", "collect", "ingest", "doctor", "query", "logs", "serve", "pricing", "version"} {
-		if !strings.Contains(buf.String(), "\n  "+command+" ") {
-			t.Errorf("usage does not list %q:\n%s", command, buf.String())
+	out := buf.String()
+	for _, command := range []string{"gpui", "web", "collect", "ingest", "doctor", "query", "logs", "serve", "pricing", "version"} {
+		if !strings.Contains(out, "\n  "+command+" ") {
+			t.Errorf("usage does not list %q:\n%s", command, out)
+		}
+	}
+	for _, needle := range []string{"Windows default", "native desktop window", "native window"} {
+		if !strings.Contains(out, needle) {
+			t.Errorf("usage is missing %q:\n%s", needle, out)
 		}
 	}
 }

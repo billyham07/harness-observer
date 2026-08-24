@@ -16,11 +16,16 @@ will not start without it beside the executable (or on the library path).
 
 RUNNING IT
 
+  {{BINARY}}
+
+On Windows this opens the dashboard in a native window (gpui). On Linux it
+streams NDJSON (collect); use `{{BINARY}} web` or `{{BINARY}} gpui` there.
+
   {{BINARY}} web
 
-Opens the dashboard and keeps it current: the same process rescans your session
-files on a timer, so there is no scheduled task to set up. Add --no-open to
-skip launching a browser, --addr to bind somewhere else.
+Opens the same dashboard in a browser and keeps it current: the same process
+rescans your session files on a timer, so there is no scheduled task to set up.
+Add --no-open to skip launching a browser, --addr to bind somewhere else.
 
   {{BINARY}} --help        every command
   {{BINARY}} version       this build, the Go toolchain, the store schema

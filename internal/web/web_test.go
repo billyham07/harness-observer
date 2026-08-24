@@ -297,3 +297,56 @@ func mustAsset(t *testing.T, name string) string {
 	}
 	return string(raw)
 }
+
+// Start is what the native window uses: bind, ingest, then serve in the
+// background so the window can own the process lifetime.
+func TestStartServesHealth(t *testing.T) {
+	s := newTestServer(t, writeSlowSource(t, 0))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	inst, err := s.Start(ctx, "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer inst.Close()
+
+	errc := make(chan error, 1)
+	go func() { errc <- inst.Serve() }()
+
+	ready, cancelReady := context.WithTimeout(ctx, 2*time.Second)
+	defer cancelReady()
+	if err := WaitReady(ready, inst.URL); err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := http.Get(inst.URL + "api/health")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("health %d", resp.StatusCode)
+	}
+
+	if err := inst.Close(); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case err := <-errc:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("Serve did not return after Close")
+	}
+}
+
+func TestWaitReadyFailsWhenContextIsAlreadyDone(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	err := WaitReady(ctx, "http://127.0.0.1:9")
+	if err == nil {
+		t.Fatal("expected an error against a cancelled context")
+	}
+}

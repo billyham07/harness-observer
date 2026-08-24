@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"os/exec"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -113,9 +114,23 @@ func notBuilt() http.Handler {
 	})
 }
 
-// ListenAndServe binds addr, starts background ingestion and serves until ctx
-// is cancelled. The returned error is nil on a clean shutdown.
-func (s *Server) ListenAndServe(ctx context.Context, addr string, openBrowser bool) error {
+// Instance is a dashboard that has bound a port and started background
+// ingestion. Serve must be called to accept HTTP; Close stops both.
+//
+// The split exists so a native window can own the process lifetime: the HTTP
+// server runs in the background, and closing the window is what shuts it down.
+type Instance struct {
+	URL    string
+	DBPath string
+
+	srv        *http.Server
+	ln         net.Listener
+	stopIngest context.CancelFunc
+}
+
+// Start binds addr and starts background ingestion. It does not serve HTTP
+// until Serve is called, and it does not print or open a browser.
+func (s *Server) Start(ctx context.Context, addr string) (*Instance, error) {
 	if addr == "" {
 		addr = DefaultAddr
 	}
@@ -123,31 +138,102 @@ func (s *Server) ListenAndServe(ctx context.Context, addr string, openBrowser bo
 
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	srv := &http.Server{Handler: s.Handler(), ReadHeaderTimeout: 5 * time.Second}
-
 	ingestCtx, stopIngest := context.WithCancel(ctx)
-	defer stopIngest()
 	go s.ingester.loop(ingestCtx)
 
-	url := "http://" + listener.Addr().String() + "/"
-	fmt.Println("harness-observer dashboard:", url)
-	fmt.Println("database:", s.DB.Path())
+	return &Instance{
+		URL:        "http://" + listener.Addr().String() + "/",
+		DBPath:     s.DB.Path(),
+		srv:        &http.Server{Handler: s.Handler(), ReadHeaderTimeout: 5 * time.Second},
+		ln:         listener,
+		stopIngest: stopIngest,
+	}, nil
+}
+
+// Serve accepts HTTP until Close or a listener error. A clean shutdown is nil.
+func (i *Instance) Serve() error {
+	if i == nil || i.srv == nil {
+		return fmt.Errorf("dashboard is not started")
+	}
+	err := i.srv.Serve(i.ln)
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+	return nil
+}
+
+// Close stops ingestion and the HTTP server. It is safe to call more than once.
+func (i *Instance) Close() error {
+	if i == nil {
+		return nil
+	}
+	if i.stopIngest != nil {
+		i.stopIngest()
+		i.stopIngest = nil
+	}
+	if i.srv == nil {
+		return nil
+	}
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	return i.srv.Shutdown(shutdownCtx)
+}
+
+// ListenAndServe binds addr, starts background ingestion and serves until ctx
+// is cancelled. The returned error is nil on a clean shutdown.
+func (s *Server) ListenAndServe(ctx context.Context, addr string, openBrowser bool) error {
+	inst, err := s.Start(ctx, addr)
+	if err != nil {
+		return err
+	}
+	fmt.Println("harness-observer dashboard:", inst.URL)
+	fmt.Println("database:", inst.DBPath)
 	if openBrowser {
-		open(url)
+		OpenBrowser(inst.URL)
 	}
 
 	go func() {
 		<-ctx.Done()
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		_ = srv.Shutdown(shutdownCtx)
+		_ = inst.Close()
 	}()
-	if err := srv.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		return err
+	return inst.Serve()
+}
+
+// WaitReady polls the dashboard until /api/health answers, or ctx is done.
+// A native window must not navigate before the loopback server is accepting,
+// or the first paint is an error page.
+func WaitReady(ctx context.Context, base string) error {
+	health := strings.TrimRight(base, "/") + "/api/health"
+	client := &http.Client{Timeout: 200 * time.Millisecond}
+	ticker := time.NewTicker(50 * time.Millisecond)
+	defer ticker.Stop()
+	var last error
+	for {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, health, nil)
+		if err != nil {
+			return err
+		}
+		resp, err := client.Do(req)
+		if err == nil {
+			resp.Body.Close()
+			if resp.StatusCode == http.StatusOK {
+				return nil
+			}
+			last = fmt.Errorf("health %s", resp.Status)
+		} else {
+			last = err
+		}
+		select {
+		case <-ctx.Done():
+			if last != nil {
+				return fmt.Errorf("dashboard did not become ready: %w", last)
+			}
+			return ctx.Err()
+		case <-ticker.C:
+		}
 	}
-	return nil
 }
 
 func (s *Server) status(w http.ResponseWriter, r *http.Request) {
@@ -350,9 +436,10 @@ func writeJSON(w http.ResponseWriter, v any) {
 	_ = enc.Encode(v)
 }
 
-// open best-effort launches the default browser. A failure is not an error:
-// the URL is printed either way.
-func open(url string) {
+// OpenBrowser best-effort launches the default browser. A failure is not an
+// error: the URL is printed either way, and a native window can fall back to
+// this when WebView2 is missing.
+func OpenBrowser(url string) {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "windows":

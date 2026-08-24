@@ -70,6 +70,10 @@ Anyone whose toolchain *can* link the static libraries can drop
 `-tags=duckdb_use_lib` and `CGO_LDFLAGS` and build a single self-contained
 binary; nothing in this repo depends on the linking mode.
 
+The native `gpui` window is Windows-only WebView2 via `github.com/jchv/go-webview2`.
+It does not add CGO. The Evergreen WebView2 runtime is already on current Windows
+10/11; if it is missing, `gpui` prints a warning and opens a browser instead.
+
 ## Toolchain
 
 | Platform | Compiler |
@@ -114,14 +118,14 @@ A missing library shows up as exit status `0xc0000135` on Windows and
 ## One writer per database
 
 DuckDB takes an exclusive lock on the database file for the whole process. Two
-processes cannot both have it open read-write, so `harness-observer web` and a
-separate `harness-observer ingest` will not run against the same store at the
-same time — the second one fails to open it. This differs from the previous
+processes cannot both have it open read-write, so `harness-observer web`/`gpui`
+and a separate `harness-observer ingest` will not run against the same store at
+the same time — the second one fails to open it. This differs from the previous
 SQLite/WAL store, which allowed it.
 
-In practice: `web` owns the store while it runs, and it ingests on its own
-timer, so a second scheduled ingest is redundant anyway. Use `--db` to point a
-second process at its own file if you really need both.
+In practice: `web` and `gpui` own the store while they run, and they ingest on
+their own timer, so a second scheduled ingest is redundant anyway. Use `--db`
+to point a second process at its own file if you really need both.
 
 ## Storage layout
 

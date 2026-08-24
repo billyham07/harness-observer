@@ -1,7 +1,8 @@
 // Command harness-observer is a local, read-only usage observer for coding
 // agent harnesses.
 //
-//	harness-observer web       local dashboard + background incremental ingest
+//	harness-observer gpui      native desktop window + background incremental ingest
+//	harness-observer web       local dashboard in a browser + background incremental ingest
 //	harness-observer collect   stream normalized turns as NDJSON (no storage)
 //	harness-observer ingest    persist normalized turns into the local DuckDB store
 //	harness-observer doctor    report discovery/checkpoint state per source
@@ -18,6 +19,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -62,6 +64,8 @@ func main() {
 		err = runServe(ctx, args)
 	case "web":
 		err = runWeb(ctx, args)
+	case "gpui":
+		err = runGPUI(ctx, args)
 	case "pricing":
 		err = runPricing(ctx, args)
 	case "help", "-h", "-help", "--help":
@@ -70,7 +74,7 @@ func main() {
 		printVersion(os.Stdout)
 	default:
 		usage(os.Stderr)
-		err = fmt.Errorf("unknown command %q (try: web, collect, ingest, doctor, query, logs, serve, pricing, version)", command)
+		err = fmt.Errorf("unknown command %q (try: gpui, web, collect, ingest, doctor, query, logs, serve, pricing, version)", command)
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
@@ -79,14 +83,28 @@ func main() {
 }
 
 // splitCommand picks the command out of the argument list. A leading flag
-// belongs to the default command, with one exception: a top level help flag is
-// routed to "help". Otherwise it reaches collect's flag set, which prints
-// collect's flags and never mentions that "web" or any other command exists.
+// belongs to collect, with one exception: a top level help or version flag is
+// routed to that command. Otherwise it would reach the default command's flag
+// set and never mention that "web" or "gpui" exist.
+//
+// A bare invocation (no args) is platform-specific: Windows opens the native
+// window, everywhere else still streams NDJSON. Leading flags stay on collect
+// so `harness-observer --since ...` does not break on Windows.
 func splitCommand(args []string) (string, []string) {
 	if len(args) > 0 && (!strings.HasPrefix(args[0], "-") || isHelpFlag(args[0]) || isVersionFlag(args[0])) {
 		return args[0], args[1:]
 	}
+	if len(args) == 0 {
+		return defaultCommand(), nil
+	}
 	return "collect", args
+}
+
+func defaultCommand() string {
+	if runtime.GOOS == "windows" {
+		return "gpui"
+	}
+	return "collect"
 }
 
 func isHelpFlag(arg string) bool {
@@ -122,7 +140,8 @@ func usage(w io.Writer) {
 
 usage: harness-observer <command> [flags]
 
-  web       local dashboard on `+web.DefaultAddr+` with background incremental ingest
+  gpui      native desktop window with background incremental ingest (Windows default)
+  web       local dashboard on `+web.DefaultAddr+` in a browser
   collect   stream normalized turns as NDJSON (no storage)
   ingest    persist normalized turns into the local DuckDB store (incremental, idempotent)
   doctor    report roots, discovery and checkpoint state per source
@@ -134,11 +153,14 @@ usage: harness-observer <command> [flags]
 
 Start here:
 
+  harness-observer                      Windows: native window; elsewhere: collect
+  harness-observer gpui                 native window (WebView2 on Windows)
   harness-observer web                  dashboard, opens a browser window
   harness-observer web --no-open        dashboard without opening a browser
   harness-observer web --addr 127.0.0.1:9500 --ingest-interval 1m
 
-The default command is "collect", so a bare "harness-observer" streams NDJSON.
+A bare "harness-observer" on Windows opens the native window. Anywhere else,
+and whenever the first argument is a flag, the default is still "collect".
 Run "harness-observer <command> -h" for the flags of a command.
 `)
 }
@@ -582,42 +604,17 @@ func runServe(ctx context.Context, args []string) error {
 	return serve.Server{DB: db, Pricing: resolver}.ListenAndServe(ctx, *addr)
 }
 
-// runWeb starts the built-in dashboard. The same process owns background
-// incremental ingestion, so a desktop user needs neither cron nor Task
-// Scheduler to keep the numbers current.
+// runWeb starts the built-in dashboard in a browser. The same process owns
+// background incremental ingestion, so a desktop user needs neither cron nor
+// Task Scheduler to keep the numbers current.
 func runWeb(ctx context.Context, args []string) error {
-	fs := flag.NewFlagSet("web", flag.ExitOnError)
-	dbPath := fs.String("db", "", "database path (default: per-user data dir, or $HARNESS_OBSERVER_DB)")
-	addr := fs.String("addr", web.DefaultAddr, "listen address (loopback by default: this is local-only data)")
-	spec := sourcesFlag(fs)
-	interval := fs.Duration("ingest-interval", web.DefaultIngestInterval, "background incremental ingest interval (0 disables it; manual refresh still works)")
-	noOpen := fs.Bool("no-open", false, "do not open a browser window")
-	buildPricing := pricingFlags(fs)
-	applyDebug := debugFlag(fs)
-	if err := fs.Parse(args); err != nil {
-		return err
-	}
-	applyDebug()
-	if _, err := buildSources(*spec); err != nil {
-		return err
-	}
-	resolver, err := buildPricing()
-	if err != nil {
-		return err
-	}
-	db, err := store.Open(*dbPath)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+	return runDashboard(ctx, args, dashboardKindWeb)
+}
 
-	server := &web.Server{
-		DB:             db,
-		Sources:        func() ([]source.FileSource, error) { return buildSources(*spec) },
-		IngestInterval: *interval,
-		Pricing:        resolver,
-	}
-	return server.ListenAndServe(ctx, *addr, !*noOpen)
+// runGPUI starts the same dashboard as web, then hosts it in a native window
+// (WebView2 on Windows). Closing the window stops the process.
+func runGPUI(ctx context.Context, args []string) error {
+	return runDashboard(ctx, args, dashboardKindGPUI)
 }
 
 func splitCSV(v string) []string {
