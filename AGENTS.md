@@ -98,11 +98,12 @@ The dashboard source is a Vue 3 + TypeScript app in `webui/`, built by Vite into
 
 ### Styling
 
+No visual language is prescribed here. Look is free to change; these rules only keep the stylesheet from stacking a second source of truth.
+
 - Component-owned rules live in that component's `<style scoped>`. Only genuinely shared primitives go in `webui/src/styles/base.css`; theme tokens go in `tokens.css` and nowhere else.
 - Never use `!important`. If a rule seems to need it, the earlier selector is too broad.
 - `prefers-reduced-motion: reduce` repeats the same selectors that set `transition`, with `transition: none`. Do not blanket `*`.
-- Colour is reserved for the four token buckets. Chrome stays neutral, and a state that needs marking (a partial estimate, a stale value) is marked typographically before it is marked in colour.
-- Bucket hues are defined once in `lib/palette.ts` and mirrored in `tokens.css`; a unit test asserts the two agree. Any change to the set is re-validated for colour-vision separation before it ships.
+- Bucket hues are defined once in `lib/palette.ts` and mirrored in `tokens.css`; a unit test asserts the two agree.
 - Interface strings go through `t()` (`src/i18n`); observed values never do.
 
 ### Charts

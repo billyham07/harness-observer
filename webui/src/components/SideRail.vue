@@ -39,7 +39,7 @@ function go(view: 'overview' | 'logs') {
       <span class="mark" aria-hidden="true">
         <i v-for="s in SERIES" :key="s.bucket" :style="{ background: `var(${s.cssVar})` }" />
       </span>
-      <span class="wordmark num">
+      <span class="wordmark">
         <span class="w-1">harness</span><span class="w-sep">-</span><span class="w-2">observer</span>
       </span>
       <span class="brand-sub eyebrow">{{ t('brand.sub') }}</span>
@@ -81,9 +81,8 @@ function go(view: 'overview' | 'logs') {
   flex: 0 0 var(--rail);
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 16px 12px 14px;
-  border-right: 1px solid var(--line);
+  gap: 20px;
+  padding: 22px 16px 18px;
   background: var(--surface);
   overflow: auto;
 }
@@ -93,61 +92,56 @@ function go(view: 'overview' | 'logs') {
   grid-template-columns: auto 1fr;
   grid-template-rows: auto auto;
   align-items: center;
-  gap: 2px 9px;
-  padding: 0 6px;
+  gap: 2px 10px;
+  padding: 0 8px;
 }
 
 .mark {
   grid-row: span 2;
   display: flex;
-  gap: 1.5px;
-  width: 15px;
-  height: 22px;
-  border-radius: 2px;
+  gap: 2px;
+  width: 18px;
+  height: 24px;
+  border-radius: 6px;
   overflow: hidden;
 }
 
 .mark i {
   flex: 1;
-  border-radius: 1px;
 }
 
 .wordmark {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-.w-1 {
-  color: var(--muted);
-}
-.w-sep {
-  color: var(--accent);
-}
-.w-2 {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
   color: var(--ink);
 }
 
+.w-sep {
+  color: var(--faint);
+}
+
 .brand-sub {
-  font-size: 9.5px;
+  font-size: 12px;
+  color: var(--faint);
 }
 
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 4px;
 }
 
 .nav a {
-  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 7px 10px 7px 12px;
+  padding: 8px 12px;
   border-radius: var(--r-2);
   color: var(--muted);
   text-decoration: none;
-  font-size: 13px;
+  font-size: 14px;
+  transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 .nav a:hover {
@@ -155,30 +149,17 @@ function go(view: 'overview' | 'logs') {
   color: var(--ink);
 }
 
-/* The active page is marked by a rail, not a filled block: it reads as a
- * position indicator on an instrument rather than a selected menu item. */
 .nav a[aria-current='page'] {
   color: var(--ink);
-  font-weight: 600;
-  background: var(--surface-2);
-}
-
-.nav a[aria-current='page']::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 7px;
-  bottom: 7px;
-  width: 2px;
-  border-radius: 1px;
-  background: var(--accent);
+  font-weight: 550;
+  background: var(--surface-3);
 }
 
 .glyph {
-  width: 14px;
+  width: 16px;
   text-align: center;
   color: var(--faint);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .spacer {
@@ -189,12 +170,11 @@ function go(view: 'overview' | 'logs') {
   display: flex;
   align-items: flex-start;
   gap: 7px;
-  padding: 8px 10px;
-  border: 1px solid var(--line-soft);
+  padding: 10px 12px;
   border-radius: var(--r-2);
   background: var(--surface-2);
-  font-size: 11.5px;
-  line-height: 1.4;
+  font-size: 12px;
+  line-height: 1.45;
   color: var(--muted);
 }
 
@@ -215,7 +195,6 @@ function go(view: 'overview' | 'logs') {
 }
 .status.failed {
   color: var(--error);
-  border-color: var(--error-soft);
   background: var(--error-soft);
 }
 .status.running .dot {
@@ -240,8 +219,8 @@ function go(view: 'overview' | 'logs') {
 
 .store {
   margin: 0;
-  padding: 0 4px;
-  font-size: 10.5px;
+  padding: 0 8px;
+  font-size: 12px;
   color: var(--faint);
 }
 
@@ -281,7 +260,8 @@ function go(view: 'overview' | 'logs') {
   .status.running .dot {
     animation: none;
   }
-  .rail {
+  .rail,
+  .nav a {
     transition: none;
   }
 }

@@ -142,9 +142,9 @@ const bucketOptions = computed(() => [
 
 .preset.on {
   background: var(--surface);
-  border-color: var(--accent);
   color: var(--ink);
   font-weight: 600;
+  box-shadow: var(--shadow-1);
 }
 
 .exact {

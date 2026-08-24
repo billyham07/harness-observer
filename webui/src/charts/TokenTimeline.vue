@@ -128,7 +128,7 @@ const caption = computed(() => {
 
 <style scoped>
 .timeline {
-  padding: 12px 12px 10px;
+  padding: 4px 16px 16px;
 }
 
 .canvas {

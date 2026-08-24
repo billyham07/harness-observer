@@ -62,28 +62,25 @@ const chips = computed<Chip[]>(() => {
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  padding: 10px var(--gutter);
-  border-bottom: 1px solid var(--line);
+  gap: 8px;
+  padding: 8px var(--gutter) 4px;
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 3px 4px 3px 8px;
+  padding: 4px 6px 4px 10px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--surface);
-  font-size: 11.5px;
+  font-size: 12.5px;
   max-width: 100%;
 }
 
 .dim {
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 500;
   color: var(--faint);
 }
 

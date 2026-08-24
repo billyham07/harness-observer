@@ -133,6 +133,11 @@ function commitSession() {
 
 <template>
   <div class="logs">
+    <header class="page-head">
+      <h1>{{ t('nav.logs') }}</h1>
+      <p>{{ t('logs.tz', { zone }) }}</p>
+    </header>
+
     <div class="toolbar">
       <label class="field id">
         <span class="eyebrow">{{ t('logs.id') }}</span>
@@ -156,7 +161,6 @@ function commitSession() {
           @update:value="setLogsPageSize($event as number)"
         />
       </label>
-      <span class="muted">{{ t('logs.tz', { zone }) }}</span>
       <span class="muted num count">{{ count }}</span>
     </div>
 
@@ -197,8 +201,8 @@ function commitSession() {
 .logs {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px var(--gutter) 32px;
+  gap: 16px;
+  padding: 12px var(--gutter) 40px;
 }
 
 .toolbar {
@@ -237,14 +241,14 @@ function commitSession() {
 
 .table-panel :deep(.n-data-table-th),
 .table-panel :deep(.n-data-table-td) {
-  padding: 5px 10px;
-  font-size: 12.5px;
+  padding: 9px 12px;
+  font-size: 13px;
 }
 
 .table-panel :deep(.n-data-table-th) {
-  font-size: 10.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--faint);
 }
 
 .table-panel :deep(.is-open td) {

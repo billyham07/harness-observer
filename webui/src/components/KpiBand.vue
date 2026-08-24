@@ -112,31 +112,34 @@ const tiles = computed(() => [
 .kpis {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .hero {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 16px;
 }
 
 .lead {
   position: relative;
-  padding: 16px 18px 18px;
+  padding: 22px 24px 24px;
   background: var(--surface);
-  border: 1px solid var(--line);
   border-radius: var(--r-3);
   box-shadow: var(--shadow-1);
   overflow: hidden;
+}
+
+.lead:first-child {
+  background: var(--wash);
 }
 
 /* The readout is the one place type is allowed to be loud. Tight tracking and
  * tabular figures keep it a measurement rather than a headline. */
 .readout {
   margin-top: 6px;
-  font-size: clamp(30px, 4.4vw, 46px);
-  font-weight: 600;
+  font-size: clamp(32px, 4.4vw, 48px);
+  font-weight: 650;
   letter-spacing: -0.035em;
   line-height: 1.02;
   color: var(--ink);
@@ -181,25 +184,22 @@ const tiles = computed(() => [
 
 .strip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(122px, 1fr));
-  gap: 1px;
-  padding: 1px;
-  background: var(--line-soft);
-  border: 1px solid var(--line);
-  border-radius: var(--r-3);
-  overflow: hidden;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
 }
 
 .tile {
-  padding: 10px 12px 11px;
+  padding: 16px 18px 18px;
   background: var(--surface);
+  border-radius: var(--r-3);
+  box-shadow: var(--shadow-1);
 }
 
 .tile-value {
-  margin-top: 3px;
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  margin-top: 8px;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
   color: var(--ink);
 }
 

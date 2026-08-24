@@ -113,10 +113,8 @@ const intervalOptions = computed(() => [
 .topbar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px var(--gutter);
-  border-bottom: 1px solid var(--line);
-  background: var(--surface);
+  gap: 10px;
+  padding: 20px var(--gutter) 8px;
 }
 
 .spacer {
@@ -131,7 +129,8 @@ const intervalOptions = computed(() => [
 
 .nav-toggle {
   display: none;
-  width: 32px;
+  width: 36px;
+  height: 36px;
   justify-content: center;
   padding: 0;
 }

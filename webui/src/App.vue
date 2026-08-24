@@ -86,11 +86,12 @@ onBeforeUnmount(() => {
 }
 
 .banner {
-  padding: 10px var(--gutter);
-  border-bottom: 1px solid var(--error-soft);
+  margin: 0 var(--gutter) 8px;
+  padding: 10px 14px;
+  border-radius: var(--r-2);
   background: var(--error-soft);
   color: var(--error);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .scrim {

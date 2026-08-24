@@ -37,13 +37,13 @@ function build(): GlobalThemeOverrides {
     bodyColor: read('--bg'),
     inputColor: surface,
     hoverColor: read('--surface-2'),
-    borderRadius: '7px',
-    borderRadiusSmall: '4px',
+    borderRadius: read('--r-2') || '12px',
+    borderRadiusSmall: read('--r-1') || '8px',
     fontFamily: read('--sans'),
     fontFamilyMono: read('--mono'),
     fontSize: '13px',
-    heightMedium: '30px',
-    heightSmall: '26px',
+    heightMedium: '32px',
+    heightSmall: '28px',
   }
   return {
     common,

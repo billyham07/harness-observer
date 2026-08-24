@@ -138,6 +138,9 @@ h3 {
   margin-bottom: 8px;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--line-soft);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
 }
 
 .kv {

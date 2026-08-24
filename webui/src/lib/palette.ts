@@ -68,8 +68,8 @@ export const CHART_CHROME: Record<
   'light' | 'dark',
   { axis: string; grid: string; text: string; surface: string }
 > = {
-  light: { axis: '#c3cad6', grid: '#e6eaf1', text: '#5a667a', surface: '#ffffff' },
-  dark: { axis: '#2b3543', grid: '#1d2530', text: '#8695a8', surface: '#10161f' },
+  light: { axis: '#d5d9e2', grid: '#eef0f5', text: '#86909c', surface: '#ffffff' },
+  dark: { axis: '#2a3340', grid: '#1f2630', text: '#8b97a8', surface: '#151b24' },
 }
 
 export const bucketColors = (theme: 'light' | 'dark') => SERIES.map((s) => BUCKET_COLORS[theme][s.bucket])

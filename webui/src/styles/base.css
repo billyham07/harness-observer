@@ -18,7 +18,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font: 13.5px/1.5 var(--sans);
+  font: 14px/1.5 var(--sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -47,14 +47,12 @@ h3 {
 
 /* --- voice ------------------------------------------------------------- */
 
-/* The instrument's labelling: small, uppercase, widely tracked, recessive.
- * It names a reading; it never competes with one. */
+/* Recessive labels: sentence case, readable, never competing with a reading. */
 .eyebrow {
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--faint);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--muted);
 }
 
 /* Every number in the product is monospace with tabular figures, so a column
@@ -80,11 +78,30 @@ h3 {
   font-style: italic;
 }
 
+.page-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.page-head h1 {
+  font-size: 26px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.page-head p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--faint);
+}
+
 /* --- surfaces ---------------------------------------------------------- */
 
 .panel {
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: none;
   border-radius: var(--r-3);
   box-shadow: var(--shadow-1);
 }
@@ -94,30 +111,28 @@ h3 {
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  padding: 13px 16px;
-  border-bottom: 1px solid var(--line-soft);
+  padding: 18px 20px 12px;
 }
 
 .panel-head h2 {
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  color: var(--ink);
 }
 
 .panel-note {
-  padding: 10px 16px 14px;
+  padding: 4px 20px 18px;
   margin: 0;
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.55;
   color: var(--faint);
 }
 
 .empty {
-  padding: 22px 16px;
+  padding: 28px 20px;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 /* --- controls ---------------------------------------------------------- */
@@ -126,13 +141,13 @@ h3 {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 30px;
-  padding: 0 11px;
+  height: 32px;
+  padding: 0 14px;
   border: 1px solid var(--line);
-  border-radius: var(--r-2);
+  border-radius: 999px;
   background: var(--surface);
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 13px;
   cursor: pointer;
   transition:
     background-color 0.12s ease,
@@ -150,15 +165,15 @@ h3 {
 }
 
 .btn-primary {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
   font-weight: 600;
 }
 
 .btn-primary:hover {
-  background: var(--ink);
-  border-color: var(--ink);
+  background: var(--accent);
+  border-color: var(--accent);
   opacity: 0.88;
 }
 
@@ -176,7 +191,7 @@ h3 {
 
 .btn.on {
   background: var(--accent-soft);
-  border-color: var(--accent);
+  border-color: transparent;
   color: var(--ink);
 }
 
@@ -189,7 +204,7 @@ h3 {
 table.grid {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 /* Tight on purpose: a comparison table with fourteen columns either fits the
@@ -197,7 +212,7 @@ table.grid {
  * to give back. */
 table.grid th,
 table.grid td {
-  padding: 7px 8px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--line-soft);
   white-space: nowrap;
 }
@@ -206,11 +221,10 @@ table.grid thead th {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: var(--surface);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  background: var(--surface-2);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
   color: var(--faint);
   text-align: right;
   cursor: pointer;
@@ -269,8 +283,8 @@ td.share {
 td.share .bar {
   position: absolute;
   left: 0;
-  top: 3px;
-  bottom: 3px;
+  top: 6px;
+  bottom: 6px;
   background: var(--accent-soft);
   border-radius: 0 var(--r-1) var(--r-1) 0;
   pointer-events: none;
@@ -294,6 +308,7 @@ table.grid td:first-child {
 
 table.grid thead th:first-child {
   z-index: 3;
+  background: var(--surface-2);
 }
 
 /* --- legends ----------------------------------------------------------- */
@@ -309,14 +324,14 @@ table.grid thead th:first-child {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--muted);
 }
 
 .legend-key {
-  width: 9px;
-  height: 9px;
-  border-radius: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
   flex: none;
 }
 
@@ -336,30 +351,30 @@ table.grid thead th:first-child {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 30px;
+  height: 36px;
   max-width: 290px;
-  padding: 0 10px;
+  padding: 0 14px;
   border: 1px solid var(--line);
-  border-radius: var(--r-2);
+  border-radius: 999px;
   background: var(--surface);
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: 13px;
   cursor: pointer;
   transition:
     border-color 0.12s ease,
-    background-color 0.12s ease;
+    background-color 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .control:hover {
-  border-color: var(--muted);
+  border-color: var(--line);
+  box-shadow: var(--shadow-1);
 }
 
 .control-label {
   flex: none;
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 400;
   color: var(--faint);
 }
 
@@ -395,22 +410,20 @@ table.grid thead th:first-child {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--line-soft);
-  font-size: 10.5px;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
+  color: var(--ink);
 }
 
 .pop-body {
-  padding: 10px 12px 12px;
+  padding: 12px 14px 14px;
 }
 
 .pop-hint {
   margin: 0 0 8px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.5;
   color: var(--faint);
 }
@@ -419,10 +432,10 @@ table.grid thead th:first-child {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 6px;
+  padding: 5px 8px;
   border-radius: var(--r-1);
   cursor: pointer;
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .option:hover {
@@ -441,7 +454,7 @@ table.grid thead th:first-child {
   flex: none;
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--faint);
 }
 

@@ -41,10 +41,8 @@ const hierarchyLabel = computed(() => {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding: 10px var(--gutter);
-  border-bottom: 1px solid var(--line);
-  background: var(--bg);
+  gap: 10px;
+  padding: 8px var(--gutter) 4px;
 }
 
 .control.wide {

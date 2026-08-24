@@ -33,6 +33,11 @@ const breakdowns = computed<Breakdown[]>(() => [
 
 <template>
   <div class="overview" :class="{ busy: loading && !loaded }">
+    <header class="page-head">
+      <h1>{{ t('nav.overview') }}</h1>
+      <p>{{ t('brand.sub') }}</p>
+    </header>
+
     <KpiBand :row="data.totals" />
 
     <TurnAnatomy :row="data.totals" />
@@ -63,8 +68,8 @@ const breakdowns = computed<Breakdown[]>(() => [
 .overview {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 16px var(--gutter) 40px;
+  gap: 20px;
+  padding: 12px var(--gutter) 48px;
 }
 
 /* Only the very first load dims the page. A background refresh that greys out

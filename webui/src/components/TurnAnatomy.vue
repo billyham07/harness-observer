@@ -170,7 +170,7 @@ const provenance = computed(() => {
 
 <style scoped>
 .body {
-  padding: 16px 16px 6px;
+  padding: 8px 20px 8px;
 }
 
 .lane {

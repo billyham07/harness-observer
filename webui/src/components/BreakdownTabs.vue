@@ -85,33 +85,34 @@ function onKeydown(event: KeyboardEvent, index: number) {
 
 <style scoped>
 .head {
-  padding: 0 16px;
-  align-items: stretch;
+  padding: 14px 16px 0;
+  align-items: center;
 }
 
 .tabs {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--surface-2);
 }
 
-/* The tabs are the panel's title, so they wear the panel title's voice: small,
- * uppercase, widely tracked. The active one is marked by a rule under it, the
- * same position indicator the left rail uses for the active page. */
 .tab {
-  position: relative;
-  padding: 13px 10px;
+  padding: 6px 14px;
   border: 0;
+  border-radius: 999px;
   background: transparent;
   color: var(--faint);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
-  transition: color 0.12s ease;
+  transition:
+    color 0.12s ease,
+    background-color 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .tab:hover {
@@ -120,17 +121,8 @@ function onKeydown(event: KeyboardEvent, index: number) {
 
 .tab.on {
   color: var(--ink);
-}
-
-.tab.on::after {
-  content: '';
-  position: absolute;
-  left: 6px;
-  right: 6px;
-  bottom: -1px;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--accent);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 
 .count {
