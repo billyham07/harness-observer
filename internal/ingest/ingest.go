@@ -28,7 +28,7 @@ import (
 // ParserVersion invalidates checkpoints when normalization changes. Bump it
 // whenever an adapter's output for identical bytes would differ; the next run
 // then re-reads affected files instead of trusting stale offsets.
-const ParserVersion = 5
+const ParserVersion = 6
 
 // headFingerprintBytes is how much of a file's head identifies it. Session
 // files start with a session header, so a changed prefix means the file was

@@ -162,8 +162,7 @@ func (s *Source) ParseFile(path string, st source.FileState, window source.Windo
 				if msg.Usage == nil {
 					return nil
 				}
-				key := firstNonEmpty(msg.ResponseID, e.ID, fmt.Sprintf("line:%d", lineNo))
-				if t := s.makeTurn(path, lineNo, ps, key, e.ParentID, "assistant", msg.Usage, countToolCalls(msg.Content), 0, e.Timestamp, window); t != nil {
+				if t := s.makeTurn(path, lineNo, ps, msg.ResponseID, e.ID, e.ParentID, "assistant", msg.Usage, countToolCalls(msg.Content), 0, e.Timestamp, window); t != nil {
 					out = append(out, *t)
 				}
 			case "toolResult":
@@ -172,12 +171,11 @@ func (s *Source) ParseFile(path string, st source.FileState, window source.Windo
 				if msg.Usage == nil {
 					return nil
 				}
-				key := firstNonEmpty(e.ID, fmt.Sprintf("line:%d", lineNo))
 				toolErrors := 0
 				if msg.IsError {
 					toolErrors = 1
 				}
-				if t := s.makeTurn(path, lineNo, ps, key, e.ParentID, "tool-llm", msg.Usage, 0, toolErrors, e.Timestamp, window); t != nil {
+				if t := s.makeTurn(path, lineNo, ps, "", e.ID, e.ParentID, "tool-llm", msg.Usage, 0, toolErrors, e.Timestamp, window); t != nil {
 					out = append(out, *t)
 				}
 			}
@@ -186,8 +184,7 @@ func (s *Source) ParseFile(path string, st source.FileState, window source.Windo
 
 		if (e.Type == "compaction" || e.Type == "branch_summary") && e.Usage != nil {
 			kind := strings.ReplaceAll(e.Type, "_", "-")
-			key := firstNonEmpty(e.ID, fmt.Sprintf("line:%d", lineNo))
-			if t := s.makeTurn(path, lineNo, ps, key, e.ParentID, kind, e.Usage, 0, 0, e.Timestamp, window); t != nil {
+			if t := s.makeTurn(path, lineNo, ps, "", e.ID, e.ParentID, kind, e.Usage, 0, 0, e.Timestamp, window); t != nil {
 				out = append(out, *t)
 			}
 		}
@@ -202,7 +199,7 @@ func (s *Source) ParseFile(path string, st source.FileState, window source.Windo
 	return out, next, nil
 }
 
-func (s *Source) makeTurn(path string, lineNo int, ps parseState, key, logicalTurnID, kind string, raw *usage, toolCalls, toolErrors int, timestamp string, window source.Window) *model.Turn {
+func (s *Source) makeTurn(path string, lineNo int, ps parseState, responseID, entryID, logicalTurnID, kind string, raw *usage, toolCalls, toolErrors int, timestamp string, window source.Window) *model.Turn {
 	if raw == nil {
 		return nil
 	}
@@ -229,7 +226,7 @@ func (s *Source) makeTurn(path string, lineNo int, ps parseState, key, logicalTu
 		Project:         projectName(ps.CWD),
 		CWD:             ps.CWD,
 		SessionID:       ps.SessionID,
-		RecordID:        ps.SessionID + ":" + kind + ":" + key,
+		RecordID:        s.recordID(ps.SessionID, kind, responseID, entryID, timestamp, lineNo),
 		TurnID:          logicalTurnID,
 		EventKind:       kind,
 		ToolCalls:       toolCalls,
@@ -239,6 +236,34 @@ func (s *Source) makeTurn(path string, lineNo int, ps parseState, key, logicalTu
 		SourceFile:      path,
 		SourceLine:      lineNo,
 	}
+}
+
+// recordID builds a globally stable identity for one turn across session forks
+// and continuations.
+//
+// Pi/OMP copies parent session history into child session files when branching,
+// compacting or continuing a session. If the record identity included the child's
+// session ID, each historical turn would receive a fresh identity in every child
+// file and be counted multiple times.
+//
+// We anchor identity on the authoritative underlying evidence:
+//  1. The model provider's completion response ID (msg.responseId) when present,
+//     which is globally unique per model call.
+//  2. The entry ID + precise timestamp (e.id@timestamp) for tool-calls, compactions,
+//     or providers omitting response IDs. In Pi, entry IDs and timestamps are
+//     immutable and preserved verbatim when copied across sessions.
+//  3. A file-line fallback only when neither is available.
+func (s *Source) recordID(sessionID, kind, responseID, entryID, timestamp string, lineNo int) string {
+	if respid := strings.TrimSpace(responseID); respid != "" {
+		return s.Harness + ":" + kind + ":resp:" + respid
+	}
+	if eid := strings.TrimSpace(entryID); eid != "" {
+		if ts := strings.TrimSpace(timestamp); ts != "" {
+			return s.Harness + ":" + kind + ":entry:" + eid + "@" + ts
+		}
+		return s.Harness + ":" + kind + ":entry:" + eid
+	}
+	return fmt.Sprintf("%s:%s:%s:line:%d", s.Harness, sessionID, kind, lineNo)
 }
 
 func countToolCalls(raw json.RawMessage) int {

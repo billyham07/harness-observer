@@ -27,7 +27,7 @@ import (
 
 // SchemaVersion is the current migration level. Bump it and append to
 // migrations when the persisted shape changes.
-const SchemaVersion = 3
+const SchemaVersion = 4
 
 // maxConns bounds the shared instance's connection pool. Reads are concurrent;
 // writes come from one ingestion goroutine, so there is no writer contention to
@@ -207,6 +207,17 @@ CREATE TABLE IF NOT EXISTS ingest_checkpoints (
 	{
 		`DELETE FROM agent_turns WHERE harness = 'claude-desktop'`,
 		`UPDATE ingest_checkpoints SET source = 'claude' WHERE source = 'claude-desktop'`,
+	},
+	// v4: Pi/OMP stable record identities across session forks/continuations.
+	//
+	// Rows collected under previous builds included session ID in the record ID,
+	// which caused historical turns replicated into child sessions (forks, continuations,
+	// compactions) to receive fresh identities and be counted multiple times.
+	// Dropping stored Pi/OMP turns and clearing their checkpoints allows them to be
+	// re-ingested cleanly with deduplicated cross-session identities.
+	{
+		`DELETE FROM agent_turns WHERE harness IN ('pi', 'omp')`,
+		`DELETE FROM ingest_checkpoints WHERE source IN ('pi', 'omp')`,
 	},
 }
 

@@ -80,3 +80,61 @@ func TestPiIncludesNestedToolAndCompactionUsage(t *testing.T) {
 		}
 	}
 }
+
+func TestPiDeduplicatesAcrossForkedSessions(t *testing.T) {
+	root := t.TempDir()
+	project := filepath.Join(root, "project")
+	if err := os.MkdirAll(project, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	parentPath := filepath.Join(project, "2026-08-20T10-00-00-000Z_s-parent.jsonl")
+	childPath := filepath.Join(project, "2026-08-20T11-00-00-000Z_s-child.jsonl")
+
+	parentBody := `{"type":"session","id":"s-parent","cwd":"/work/demo","timestamp":"2026-08-20T10:00:00Z"}
+{"type":"message","id":"m1","parentId":"u1","timestamp":"2026-08-20T10:00:10Z","message":{"role":"assistant","model":"glm-5.3","provider":"aigw","responseId":"resp-1","usage":{"input":100,"output":20,"cacheRead":50,"totalTokens":170}}}
+{"type":"message","id":"m2","parentId":"u2","timestamp":"2026-08-20T10:01:00Z","message":{"role":"assistant","model":"glm-5.3","provider":"aigw","usage":{"input":200,"output":30,"cacheRead":80,"totalTokens":310}}}
+`
+	// Child session replicates m1 and m2 from parent session, and appends fresh turn m3.
+	childBody := `{"type":"session","id":"s-child","cwd":"/work/demo","timestamp":"2026-08-20T11:00:00Z","parentSession":"` + filepath.ToSlash(parentPath) + `"}
+{"type":"message","id":"m1","parentId":"u1","timestamp":"2026-08-20T10:00:10Z","message":{"role":"assistant","model":"glm-5.3","provider":"aigw","responseId":"resp-1","usage":{"input":100,"output":20,"cacheRead":50,"totalTokens":170}}}
+{"type":"message","id":"m2","parentId":"u2","timestamp":"2026-08-20T10:01:00Z","message":{"role":"assistant","model":"glm-5.3","provider":"aigw","usage":{"input":200,"output":30,"cacheRead":80,"totalTokens":310}}}
+{"type":"message","id":"m3","parentId":"u3","timestamp":"2026-08-20T11:00:10Z","message":{"role":"assistant","model":"glm-5.3","provider":"aigw","responseId":"resp-3","usage":{"input":300,"output":40,"cacheRead":100,"totalTokens":440}}}
+`
+
+	if err := os.WriteFile(parentPath, []byte(parentBody), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(childPath, []byte(childBody), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	rows, err := New("pi", root).Collect(context.Background(), source.Window{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Must deduplicate m1 and m2 so that exactly 3 unique turns are collected.
+	if len(rows) != 3 {
+		t.Fatalf("got %d rows, want 3 (replicated turns m1 and m2 must not be double-counted)", len(rows))
+	}
+
+	byRecordID := make(map[string]model.Turn, len(rows))
+	for _, row := range rows {
+		byRecordID[row.RecordID] = row
+	}
+
+	wantM1 := "pi:assistant:resp:resp-1"
+	wantM2 := "pi:assistant:entry:m2@2026-08-20T10:01:00Z"
+	wantM3 := "pi:assistant:resp:resp-3"
+
+	if _, ok := byRecordID[wantM1]; !ok {
+		t.Fatalf("missing record id %q in %+v", wantM1, byRecordID)
+	}
+	if _, ok := byRecordID[wantM2]; !ok {
+		t.Fatalf("missing record id %q in %+v", wantM2, byRecordID)
+	}
+	if _, ok := byRecordID[wantM3]; !ok {
+		t.Fatalf("missing record id %q in %+v", wantM3, byRecordID)
+	}
+}
