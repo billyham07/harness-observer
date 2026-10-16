@@ -495,6 +495,8 @@ func TestQueryLogsDTOCarriesNoContentFields(t *testing.T) {
 		"observed_tokens": true, "native_input_tokens": true, "native_total_tokens": true,
 		"tool_calls": true, "tool_errors": true, "tool_error_evidence": true,
 		"reported_cost_usd": true, "source_file": true, "source_line": true, "estimated_cost": true,
+		// Timing metadata derived from stored timestamps, not content.
+		"interval_ms": true, "est_output_tokens_per_second": true,
 	}
 	for name := range fields {
 		if !allowed[name] {
