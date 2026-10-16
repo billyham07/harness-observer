@@ -247,6 +247,7 @@ export const en = {
   'logs.col.cacheRead': 'Cache read',
   'logs.col.cacheWrite': 'Cache write',
   'logs.col.output': 'Output',
+  'logs.col.speed': 'tok/s (est.)',
   'logs.col.tools': 'Tools',
   'logs.col.toolErrors': 'Tool errors',
   'logs.col.estCost': 'Est. API cost',
@@ -265,6 +266,8 @@ export const en = {
   'logs.evidence': 'Tool-error evidence',
   'logs.sourceFile': 'Source file',
   'logs.sourceLine': 'Source line',
+  'logs.interval': 'Since previous turn (ms)',
+  'logs.speed.hint': 'Output tokens over the time since the previous turn in this session. Includes tool and wait time, so it usually understates real speed.',
 }
 
 export type StringKey = keyof typeof en

@@ -64,11 +64,13 @@ The same principle applies to any newly added optional diagnostic metric: absenc
 | Field | Codex | Claude | Pi / OMP | OpenCode | Grok new | Grok legacy |
 | --- | --- | --- | --- | --- | --- | --- |
 | duration | NO reliable model-call duration verified | NO reliable model-call duration verified | NO verified | **YES**: `time.completed - time.created` when completed exists | **YES**: `turn_completed.usage.apiDurationMs` when persisted | NO |
-| output tok/s | NO | NO | NO | DERIVED from output / verified duration, label as derived | DERIVED from output / `apiDurationMs`, label as derived | NO |
+| output tok/s (est.) | ESTIMATED | ESTIMATED | ESTIMATED | ESTIMATED | ESTIMATED | NO |
 | TTFT | **NO** | **NO** | **NO** | NO verified persisted first-token timestamp | NO verified | NO |
 | HTTP status code | **NO** | **NO** | **NO** | NO | NO | NO |
 | upstream HTTP/provider error text | NO | NO | NO | only structured assistant error type/detail with content-safety review; never invent HTTP status | only if explicitly persisted in a structured failure record | NO |
 | retries/attempts | NO common verified metric | NO common verified metric | NO | not verified as durable per-call evidence | not verified | NO |
+
+**Estimated tok/s.** The Logs surface reports `est_output_tokens_per_second` = output tokens / `interval_ms`, where `interval_ms` is the gap to the previous stored turn of the same session (by harness + session id, measured before any filter, millisecond precision from `ts`). It is a deliberate, owner-approved exception to the no-adjacent-timestamp rule below, chosen because Claude Code and Codex persist no per-turn duration. The interval includes tool execution and user wait time, so the figure usually understates real decode speed; it is null for a session's first turn and for turns with no output, and every surface labels it as an estimate. It is derived per query and never stored.
 
 OpenCode's current AssistantMessage schema explicitly carries `time.created`, optional `time.completed`, tokens/cache, cost, provider/model/session ids and optional structured `error`. An unfinished/orphaned message may have no `time.completed`, so duration must remain NULL for it rather than becoming zero.
 
@@ -131,4 +133,4 @@ with no fake turn id, duration, TTFT, status, or per-turn tool/error attribution
 
 The Logs API should use nullable/optional fields for diagnostics whose presence is not universal. A consumer must be able to distinguish unavailable from observed zero.
 
-Do not infer a missing metric from adjacent timestamps, token volume, model names, prose, or global configuration merely to fill the table.
+Apart from the labelled tok/s estimate above, do not infer a missing metric from adjacent timestamps, token volume, model names, prose, or global configuration merely to fill the table.

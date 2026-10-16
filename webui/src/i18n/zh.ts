@@ -240,6 +240,7 @@ export const zh: Partial<Record<StringKey, string>> = {
   'logs.col.cacheRead': '缓存读',
   'logs.col.cacheWrite': '缓存写',
   'logs.col.output': '输出',
+  'logs.col.speed': 'tok/s（估）',
   'logs.col.tools': '工具',
   'logs.col.toolErrors': '工具错误',
   'logs.col.estCost': '估计 API 费用',
@@ -258,4 +259,6 @@ export const zh: Partial<Record<StringKey, string>> = {
   'logs.evidence': '工具错误证据',
   'logs.sourceFile': '源文件',
   'logs.sourceLine': '源行号',
+  'logs.interval': '距上一轮（ms）',
+  'logs.speed.hint': '输出 token ÷ 距本会话上一轮的时间。包含工具执行和等待时间，通常低于真实速度。',
 }
