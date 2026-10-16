@@ -85,6 +85,18 @@ const columns = computed<DataTableColumns<LogRow>>(() => [
     align: 'right',
     render: (r) => numCell(r.output_tokens),
   },
+  {
+    // An estimate from the gap to the previous turn, so it is labelled as one
+    // in the header and explained on hover.
+    title: () => h('span', { title: t('logs.speed.hint') }, t('logs.col.speed')),
+    key: 'est_output_tokens_per_second',
+    width: 104,
+    align: 'right',
+    render: (r) =>
+      r.est_output_tokens_per_second === null
+        ? h('span', { class: 'unknown' }, UNKNOWN)
+        : h('span', { class: 'num' }, r.est_output_tokens_per_second.toFixed(1)),
+  },
   { title: t('logs.col.tools'), key: 'tool_calls', width: 80, align: 'right', render: (r) => numCell(r.tool_calls) },
   {
     title: t('logs.col.toolErrors'),
@@ -173,7 +185,7 @@ function commitSession() {
         :row-props="rowProps"
         :bordered="false"
         :single-line="false"
-        :scroll-x="1600"
+        :scroll-x="1700"
         max-height="calc(100vh - 290px)"
         size="small"
       >

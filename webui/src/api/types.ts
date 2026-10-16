@@ -139,6 +139,10 @@ export interface LogRow {
   reported_cost_usd: number | null
   source_file: string
   source_line: number
+  /** Time since the previous turn of the same session; null for the first turn. */
+  interval_ms: number | null
+  /** Output over interval_ms. An estimate: the interval includes tool and wait time. */
+  est_output_tokens_per_second: number | null
   estimated_cost?: LogCost | null
 }
 

@@ -495,6 +495,8 @@ func TestQueryLogsDTOCarriesNoContentFields(t *testing.T) {
 		"observed_tokens": true, "native_input_tokens": true, "native_total_tokens": true,
 		"tool_calls": true, "tool_errors": true, "tool_error_evidence": true,
 		"reported_cost_usd": true, "source_file": true, "source_line": true, "estimated_cost": true,
+		// Timing metadata derived from stored timestamps, not content.
+		"interval_ms": true, "est_output_tokens_per_second": true,
 	}
 	for name := range fields {
 		if !allowed[name] {
@@ -576,5 +578,56 @@ func TestQueryLogsEmptyStatesAreDistinguishable(t *testing.T) {
 
 	if got := mustLogs(t, db, LogQuery{}); got.Empty != nil {
 		t.Fatalf("a page with rows must not carry an empty state: %+v", got.Empty)
+	}
+}
+
+func TestQueryLogsEstimatesThroughputFromPreviousTurnInSession(t *testing.T) {
+	db, err := store.Open(filepath.Join(t.TempDir(), "rate.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+
+	base := time.Date(2026, 8, 20, 10, 0, 0, 0, time.UTC)
+	turn := func(at time.Duration, session, record string, output int64) model.Turn {
+		return model.Turn{Timestamp: base.Add(at), Harness: "claude-code", SessionID: session,
+			RecordID: record, EventKind: "assistant", SourceFile: "/evidence/" + session + ".jsonl", SourceLine: 1,
+			Usage: model.NewSplitUsage(10, output, 0, 0, 0, nil, model.UsageObserved)}
+	}
+	turns := []model.Turn{
+		turn(0, "s1", "s1:1", 100),
+		// Half a second later, inside the same wall-clock second: ts_unix alone
+		// would see no gap at all.
+		turn(500*time.Millisecond, "s1", "s1:2", 50),
+		turn(2500*time.Millisecond, "s1", "s1:3", 0),
+		// Another session in between must not borrow s1's history.
+		turn(time.Second, "s2", "s2:1", 40),
+	}
+	if _, err := db.InsertTurns(context.Background(), turns); err != nil {
+		t.Fatal(err)
+	}
+
+	byID := map[string]LogRow{}
+	for _, r := range mustLogs(t, db.SQL(), LogQuery{}).Rows {
+		byID[r.RecordID] = r
+	}
+	if r := byID["s1:1"]; r.IntervalMS != nil || r.EstOutputTokensPerSecond != nil {
+		t.Fatalf("a session's first turn has no previous turn to measure from: %+v", r)
+	}
+	if r := byID["s1:2"]; r.IntervalMS == nil || *r.IntervalMS != 500 ||
+		r.EstOutputTokensPerSecond == nil || *r.EstOutputTokensPerSecond != 100 {
+		t.Fatalf("want 500 ms and 100 tok/s, got %+v", r)
+	}
+	if r := byID["s1:3"]; r.IntervalMS == nil || *r.IntervalMS != 2000 || r.EstOutputTokensPerSecond != nil {
+		t.Fatalf("no output means no throughput, not 0 tok/s: %+v", r)
+	}
+	if r := byID["s2:1"]; r.IntervalMS != nil {
+		t.Fatalf("interval crossed a session boundary: %+v", r)
+	}
+
+	// A filter narrows the rows, not the history an interval is measured over.
+	only := mustLogs(t, db.SQL(), LogQuery{Filter: Filter{Record: []string{"s1:2"}}}).Rows
+	if len(only) != 1 || only[0].IntervalMS == nil || *only[0].IntervalMS != 500 {
+		t.Fatalf("filtering changed the interval: %+v", only)
 	}
 }

@@ -60,6 +60,12 @@ const sections = computed<{ title: string; entries: Entry[] }[]>(() => {
         { label: t('kpi.reasoning'), value: exact(row.reasoning_tokens) },
         { label: 'prompt', value: exact(row.prompt_tokens) },
         { label: 'observed', value: exact(row.observed_tokens) },
+        {
+          label: t('logs.col.speed'),
+          value:
+            row.est_output_tokens_per_second === null ? UNKNOWN : row.est_output_tokens_per_second.toFixed(1),
+        },
+        { label: t('logs.interval'), value: optional(row.interval_ms) },
         { label: t('facet.semantics'), value: row.usage_semantics },
         { label: t('facet.basis'), value: row.usage_basis },
       ],

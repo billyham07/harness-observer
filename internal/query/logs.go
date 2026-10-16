@@ -115,6 +115,19 @@ type LogRow struct {
 	SourceFile string `json:"source_file"`
 	SourceLine int64  `json:"source_line"`
 
+	// IntervalMS is the time since the previous stored turn of the same
+	// session, and null for a session's first turn. No harness format verified
+	// so far persists a per-turn generation duration for Claude Code or Codex,
+	// so this interval is what the throughput estimate divides by. It is not a
+	// generation duration: it also covers tool execution and time spent
+	// waiting on the user.
+	IntervalMS *int64 `json:"interval_ms"`
+	// EstOutputTokensPerSecond is output tokens over IntervalMS, derived per
+	// query and never stored. Because the interval includes non-generation
+	// time it usually understates real decode speed, and every surface labels
+	// it as an estimate. Null when there is no interval or no output.
+	EstOutputTokensPerSecond *float64 `json:"est_output_tokens_per_second"`
+
 	// EstimatedCost is present only when the request ran with a pricing
 	// catalog. It is an API-equivalent estimate at published rates, not spend.
 	EstimatedCost *LogCost `json:"estimated_cost,omitempty"`
@@ -217,7 +230,19 @@ const logColumns = `ts_unix, harness, client, provider, model, reasoning_effort,
 	session_id, record_id, turn_id, event_kind, usage_basis, usage_semantics,
 	input_tokens, cache_read_tokens, cache_write_tokens, prompt_tokens,
 	output_tokens, reasoning_tokens, native_input_tokens, native_total_tokens,
-	tool_calls, tool_errors, cost_usd, source_file, source_line`
+	tool_calls, tool_errors, cost_usd, source_file, source_line, interval_ms`
+
+// logSource is agent_turns plus interval_ms, the gap to the previous turn of the
+// same session. The window runs over the whole table before any filter applies,
+// so narrowing the view by model or event kind does not change a row's
+// interval. ts is parsed for millisecond precision: ts_unix is whole seconds,
+// and consecutive calls often land inside one second.
+//
+// The alias keeps the name agent_turns, so Filter.where applies unchanged.
+const logSource = `(
+	SELECT *, ts_ms - LAG(ts_ms) OVER (PARTITION BY harness, session_id ORDER BY ts_ms, record_id) AS interval_ms
+	FROM (SELECT *, epoch_ms(TRY_CAST(ts AS TIMESTAMPTZ)) AS ts_ms FROM agent_turns)
+) AS agent_turns`
 
 // normalize validates the sort key and clamps the paging values. It returns the
 // effective values rather than mutating in place, so the caller's request stays
@@ -284,7 +309,7 @@ func QueryLogs(ctx context.Context, db *sql.DB, q LogQuery, pricer Pricer) (LogP
 	// The tie-breaker is the table's primary key, so the order is total: two
 	// rows sharing a timestamp cannot swap between page 1 and page 2 and make a
 	// row appear twice or never.
-	q2 := fmt.Sprintf("SELECT %s FROM agent_turns%s ORDER BY %s %s, harness ASC, record_id ASC LIMIT ? OFFSET ?",
+	q2 := fmt.Sprintf("SELECT %s FROM "+logSource+"%s ORDER BY %s %s, harness ASC, record_id ASC LIMIT ? OFFSET ?",
 		logColumns, where, logSortExpr[sortKey], direction)
 	pageArgs := append(append([]any{}, args...), pageSize, (page-1)*pageSize)
 
@@ -339,7 +364,7 @@ func scanLogRow(rows *sql.Rows) (LogRow, error) {
 		r                                                       LogRow
 		tsUnix                                                  int64
 		client, provider, model, effort, project, turnID        sql.NullString
-		nativeInput, nativeTotal                                sql.NullInt64
+		nativeInput, nativeTotal, interval                      sql.NullInt64
 		reportedCost                                            sql.NullFloat64
 		toolCalls, toolErrors, sourceLine                       int64
 		eventKind, usageBasis, usageSemantics, sourceFile       string
@@ -348,7 +373,7 @@ func scanLogRow(rows *sql.Rows) (LogRow, error) {
 	if err := rows.Scan(&tsUnix, &r.Harness, &client, &provider, &model, &effort, &project,
 		&r.SessionID, &r.RecordID, &turnID, &eventKind, &usageBasis, &usageSemantics,
 		&input, &cacheRead, &cacheWrite, &prompt, &output, &reasoning, &nativeInput, &nativeTotal,
-		&toolCalls, &toolErrors, &reportedCost, &sourceFile, &sourceLine); err != nil {
+		&toolCalls, &toolErrors, &reportedCost, &sourceFile, &sourceLine, &interval); err != nil {
 		return LogRow{}, err
 	}
 	r.Timestamp = time.Unix(tsUnix, 0).UTC()
@@ -392,6 +417,14 @@ func scanLogRow(rows *sql.Rows) (LogRow, error) {
 	}
 	r.SourceFile = sourceFile
 	r.SourceLine = sourceLine
+	if interval.Valid && interval.Int64 > 0 {
+		ms := interval.Int64
+		r.IntervalMS = &ms
+		if output > 0 {
+			rate := float64(output) * 1000 / float64(ms)
+			r.EstOutputTokensPerSecond = &rate
+		}
+	}
 	return r, nil
 }
 

@@ -39,6 +39,8 @@ const logRow = (over: Partial<LogRow> = {}): LogRow => ({
   reported_cost_usd: null,
   source_file: 'C:/sessions/a.jsonl',
   source_line: 42,
+  interval_ms: 1500,
+  est_output_tokens_per_second: 6,
   estimated_cost: null,
   ...over,
 })
@@ -49,7 +51,13 @@ const logRow = (over: Partial<LogRow> = {}): LogRow => ({
  * says 500 rows exist and hands back two.
  */
 const page: LogPage = {
-  rows: [logRow(), logRow({ record_id: 'record-2', model: null, tool_errors: 2 })],
+  rows: [logRow(), logRow({
+      record_id: 'record-2',
+      model: null,
+      tool_errors: 2,
+      interval_ms: null,
+      est_output_tokens_per_second: null,
+    })],
   page: 1,
   page_size: 50,
   total: 500,
@@ -151,6 +159,15 @@ describe('logs page', () => {
     expect(rows[0].text()).not.toMatch(/\b0\b/)
     // The second row has no model recorded.
     expect(rows[1].findAll('.unknown').length).toBeGreaterThan(0)
+    wrapper.unmount()
+  })
+
+  it('shows estimated tok/s, and unknown for the first turn of a session', async () => {
+    const wrapper = await mountLogs()
+    const rows = wrapper.findAll('tbody tr')
+
+    expect(rows[0].findAll('td')[10].text()).toBe('6.0')
+    expect(rows[1].findAll('td')[10].text()).toBe(UNKNOWN)
     wrapper.unmount()
   })
 
