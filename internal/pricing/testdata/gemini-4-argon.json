@@ -1,0 +1,11 @@
+{
+  "source": "litellm",
+  "url": "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json",
+  "fetched_at": "2026-11-02T06:00:11Z",
+  "upstream_sha256": "7f7f1567bee2b7ba4118e4b9b3c1de70b122fd9164f69d9adfc12aca1033101a",
+  "models": {
+    "gemini/gemini-4-argon": {"p": "gemini", "i": 0.000002, "o": 0.000010, "r": 0.0000001},
+    "vertex_ai/gemini-4-argon": {"p": "vertex_ai", "i": 0.000002, "o": 0.000010, "r": 0.0000001},
+    "kyma/gemini-4-argon": {"p": "kyma", "i": 0.0000054, "o": 0.000027, "r": 0.00000027}
+  }
+}

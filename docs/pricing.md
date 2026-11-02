@@ -48,7 +48,7 @@ go run ./scripts/genpricing            # rewrites internal/pricing/catalog.json
 ```
 
 The generator keeps chat-shaped models and four rates — input, output, cache
-read, cache write — which turns a ~1.8 MB upstream file into ~190 KB. It runs by
+read, cache write — which turns a ~1.8 MB upstream file into ~280 KB. It runs by
 hand: a build that reaches the network fails on a train, and a price list that
 moves under a release makes a number nobody can reproduce.
 
@@ -100,8 +100,24 @@ matching, so a future `gpt-5.7-sol` can never be priced as `gpt-5.6-sol`.
 | `vendor-name-reorder` | `claude-4.6-opus` → `claude-opus-4-6` |
 | `date-suffix` | `claude-opus-4-6-20260205` → `claude-opus-4-6` |
 | `case-insensitive` | `GPT-5.5` → `gpt-5.5` |
-| `unique-provider-suffix` | `grok-4.5` → `xai/grok-4.5`, because only one provider publishes it |
+| `official-provider` | `gemini-4-argon` → `gemini/gemini-4-argon`; `grok-4.5` → `xai/grok-4.5` |
+| `unique-provider-suffix` | an otherwise unrecognized bare id has exactly one provider-qualified catalog entry |
 | `agreed-provider-suffix` | several providers publish it at identical rates, so the choice cannot change the number |
+
+Bare `gemini-`, `grok-`, `claude-` and `gpt-` model ids default to the
+`gemini/`, `xai/`, `anthropic/` and `openai/` catalog namespaces respectively,
+after exact entries and the existing rewrites have been tried. This supplies
+only a namespace: the **entire** model id must exist as an exact catalog key.
+A reseller adding a different price therefore cannot make the official
+API-equivalent baseline ambiguous. Explicit provider-qualified catalog entries
+and local overrides still win. If the official entry is missing, these ids stay
+unpriced rather than falling back to a reseller-only rate. Other model families
+retain the unique/agreed-provider suffix rules.
+
+This is a pricing comparison policy, not an inference about the observed
+provider, a subscription bill, or Antigravity credit consumption. Source model
+and provider dimensions are unchanged. Rates come from the active catalog at
+query time, including any promotional prices it currently publishes.
 
 Anything else is **unpriced**, with a reason. `glm-5.2` is unpriced because
 three providers publish it at three different prices, and guessing which one was

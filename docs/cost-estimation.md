@@ -166,6 +166,15 @@ Do not use broad fuzzy matching that can silently price a future model as an old
 
 Do not introduce a generic `gpt-5.6` prefix alias if it could swallow distinct future variants.
 
+For known vendor model families, a bare id defaults to the official vendor's
+published API rate, even when resellers publish the same id at different rates.
+Only the namespace is added and the complete model id must match an existing
+catalog key; unknown variants never inherit a sibling's price. Exact catalog
+entries, explicit provider-qualified entries and local overrides retain priority.
+If the official rate is unavailable, do not substitute a reseller-only rate.
+This comparison baseline does not change observed provider/model evidence or
+claim to describe subscription/OAuth charges.
+
 Return enough match metadata to explain which catalog key/rate was used.
 
 ## Cost formula

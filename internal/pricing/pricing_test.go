@@ -83,8 +83,9 @@ func TestResolveRules(t *testing.T) {
 		// Anthropic's two spellings of one model.
 		{"anthropic--claude-4.6-opus", "claude-opus-4-6", RuleVendorReorder, BasisCatalog},
 		{"GPT-5.5", "gpt-5.5", RuleCaseInsensitive, BasisCatalog},
-		// Only one provider publishes this one, so the bare name is unambiguous.
-		{"grok-4.5", "xai/grok-4.5", RuleUniqueSuffix, BasisCatalog},
+		// Resellers may disagree; bare vendor ids use the official API baseline.
+		{"grok-4.5", "xai/grok-4.5", RuleOfficialProvider, BasisCatalog},
+		{"gemini-4-argon", "gemini/gemini-4-argon", RuleOfficialProvider, BasisCatalog},
 	}
 	for _, tc := range cases {
 		m := r.Resolve(tc.observed)

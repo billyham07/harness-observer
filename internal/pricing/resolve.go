@@ -22,16 +22,17 @@ const (
 // lookup of a deterministically rewritten name; none of them is a prefix or
 // substring match, so a new "gpt-5.7-sol" can never be priced as "gpt-5.6-sol".
 const (
-	RuleOverride        = "explicit-override"
-	RuleExact           = "exact"
-	RuleSeparator       = "separator-normalized"
-	RuleProviderPrefix  = "provider-prefix"
-	RuleAlias           = "canonical-alias"
-	RuleVendorReorder   = "vendor-name-reorder"
-	RuleDateSuffix      = "date-suffix"
-	RuleCaseInsensitive = "case-insensitive"
-	RuleUniqueSuffix    = "unique-provider-suffix"
-	RuleAgreedSuffix    = "agreed-provider-suffix"
+	RuleOverride         = "explicit-override"
+	RuleExact            = "exact"
+	RuleSeparator        = "separator-normalized"
+	RuleProviderPrefix   = "provider-prefix"
+	RuleAlias            = "canonical-alias"
+	RuleVendorReorder    = "vendor-name-reorder"
+	RuleDateSuffix       = "date-suffix"
+	RuleCaseInsensitive  = "case-insensitive"
+	RuleOfficialProvider = "official-provider"
+	RuleUniqueSuffix     = "unique-provider-suffix"
+	RuleAgreedSuffix     = "agreed-provider-suffix"
 )
 
 // Reasons an observed model stays unpriced. These are diagnostics, not errors:
@@ -75,9 +76,19 @@ func (m Match) Priced() bool { return m.Basis != BasisUnpriced && !m.Rates.Empty
 // a different catalog product.
 var aliases = map[string]string{
 	"gpt-4o-latest":  "gpt-4o",
-	"chatgpt-4o":     "chatgpt-4o-latest",
 	"grok-4.6-build": "xai/grok-4.6",
 	"grok-4.5-build": "xai/grok-4.5",
+}
+
+// officialNamespaces defines the API-equivalent comparison baseline, not the
+// observed routing provider or actual spend. Only the namespace is supplied:
+// the complete model id must still exist as an exact catalog key. Never strip
+// a variant or reasoning suffix to find an official rate.
+var officialNamespaces = []struct{ family, namespace string }{
+	{"gemini-", "gemini/"},
+	{"grok-", "xai/"},
+	{"claude-", "anthropic/"},
+	{"gpt-", "openai/"},
 }
 
 var (
@@ -191,6 +202,29 @@ func (c *Catalog) lookup(observed string) (string, Entry, string, string) {
 		if key, ok := c.lower[strings.ToLower(cand.name)]; ok {
 			return key, c.Models[key], RuleCaseInsensitive, ""
 		}
+	}
+	// Bare vendor model ids default to the vendor's public API rate. A new
+	// reseller with a markup must not invalidate that comparison baseline.
+	// Exact names (including explicitly qualified resellers) above still win.
+	officialModel := false
+	for _, cand := range append([]candidate{{name: name, rule: RuleExact}}, list...) {
+		bare := strings.ToLower(cand.name)
+		if strings.Contains(bare, "/") {
+			continue
+		}
+		for _, vendor := range officialNamespaces {
+			if !strings.HasPrefix(bare, vendor.family) {
+				continue
+			}
+			officialModel = true
+			if key, ok := c.lower[vendor.namespace+bare]; ok {
+				return key, c.Models[key], RuleOfficialProvider, ""
+			}
+		}
+	}
+	if officialModel {
+		// A reseller-only entry is not evidence of an official API rate.
+		return "", Entry{}, "", ReasonNoMatch
 	}
 	// Last resort: a bare model name against provider-prefixed catalog keys.
 	// This only fires when the answer cannot depend on which provider is meant,
