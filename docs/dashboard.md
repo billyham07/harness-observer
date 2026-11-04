@@ -9,7 +9,7 @@ Both commands serve the embedded dashboard on `127.0.0.1:9464`. `gpui` hosts it
 in a native window (WebView2 on Windows; elsewhere it falls back to a browser).
 `web` always opens a browser. The same process runs incremental ingestion in
 the background, so a desktop user needs neither cron nor Task Scheduler to keep
-the numbers current. A left rail switches between **Overview** (`/`) and
+the numbers current. Top-bar tabs switch between **Overview** (`/`) and
 **Logs** (`/logs`); Logs is a server-paginated event table over
 [`/api/logs`](logs.md), not a second copy of the filters in the browser.
 
@@ -69,19 +69,34 @@ overwrite the newer state on arrival.
 `npm run dev` serves the same app against a running `harness-observer web` on
 `127.0.0.1:9464`, so the Vue side can be iterated on without rebuilding Go.
 
+## Layout and trends
+
+The dashboard is a flat, itemised statement: top navigation, two headline
+readouts, Usage / Activity / Pricing line items, and ruled sections rather than
+cards. The visual tokens and component rules are documented in
+[`webui/DESIGN.md`](../webui/DESIGN.md).
+
+The timeline has four small multiples in canonical bucket order. Each has its
+own vertical scale, while all four share a real calendar axis. Missing buckets
+between the first and last recorded bucket are filled with zeros (up to 20,000
+buckets); larger spans retain their real timestamp spacing without padding.
+
 ## Filter surface
 
 Every filter is a dropdown in one row under the header, and whatever is
 currently narrowing the numbers is repeated as a removable chip. Time range,
 grouping interval, all filters and the refresh settings live in the URL, so a
-view can be bookmarked or pasted to explain a number.
+view can be bookmarked or pasted to explain a number. A fresh URL without a
+range opens on the last seven days. All time is an explicit `preset=all`
+bookmark; exact `from`/`to` links remain unchanged. Reset returns the range to
+the last seven days while preserving refresh settings, theme and language.
 
 | Control | What it does |
 | --- | --- |
 | Range | relative presets (Today, Yesterday, last 24h/7d/30d/90d, this week, this month, last month, all time), a two-month range calendar with date + time fields for anything else, and the time bucket. Bucket `Auto` picks hour/day/month from the span. A preset is stored in the URL by name and re-evaluated on load, so a shared "Today" link means today; a hand-picked range is stored literally |
 | Harness → model → effort | the correlated selector below, with a search box for large trees |
 | Client, Provider, Project, Event kind, Evidence basis, Usage semantics | flat multi-selects, cross-filtered by everything except themselves |
-| Scan now | re-reads session files, then re-runs the query. The pill next to it reports the last scan |
+| Scan now | re-reads session files, then re-runs the query. The top-bar status reports the last scan |
 | Auto / Light / Dark | theme; `Auto` follows the OS and re-resolves when it changes |
 | EN / 中 | interface language, English or Chinese. It defaults to the browser's language and is remembered per browser |
 
@@ -151,9 +166,13 @@ One of the two headline readouts carries the API-equivalent cost estimate with
 its pricing coverage underneath it,
 and every comparison table gains sortable `est. API $`, `$/session`, `$/turn`,
 `$/1M observed` and `coverage` columns, separated from the token columns by a
-rule. Cost tiles and cells are styled as a different kind of number on purpose:
-the tokens are evidence, the dollars are derived from somebody else's price
-list.
+rule. The headline estimate and itemised cost cells carry partial-coverage
+qualifiers on purpose: tokens are evidence, while dollars are derived from
+somebody else's price list. The composition panel compares each bucket's token
+quantity, token/cost shares, estimated dollars and derived cost per million
+observed tokens. That effective rate is not a published model rate; unpriced
+tokens remain in its denominator, and partial estimates are marked with `*`.
+Published zero rates render as `$0.00`, distinct from unknown prices.
 
 The rules that keep the number honest:
 

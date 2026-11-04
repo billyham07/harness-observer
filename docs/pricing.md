@@ -209,15 +209,19 @@ prompts, responses or content.
 
 ## Dashboard
 
-- **Est. API cost** and **Pricing coverage** KPI tiles, dashed-bordered to mark
-  them as estimates, and marked partial below 99.5% coverage.
-- An **Estimated cost composition** ribbon in the same four buckets as the token
-  ribbon. It is a separate strip because cache reads dominate the token ribbon
-  and are nearly free, so the two shapes tell genuinely different stories.
+- **Est. API cost** is one of two headline readouts, with a coverage meter and
+  itemised **Pricing coverage** / **Unpriced tokens** lines. Estimates below
+  99.5% coverage are footnoted as partial.
+- An itemised composition table compares the same four buckets by token count,
+  token share, estimated-cost share, estimated dollars, effective cost per
+  million observed tokens and relative cost. Effective rates are derived
+  comparison metrics, not published model rates; unpriced tokens remain in
+  their denominator, and partial estimates carry `*`. Published zero costs stay
+  `$0.00`; unknown costs stay `–`.
 - Sortable `est. API $`, `$/session`, `$/turn`, `$/1M observed` and `coverage`
   columns on every comparison table, separated from the token columns by a rule.
   `$/1M observed` is a derived comparison metric of ours, not a provider rate:
   observed tokens include cache reads.
-- A provenance line under the cost ribbon naming the catalog, its version, its
+- A provenance line under the composition table naming the catalog, its version, its
   staleness, any overrides or heuristics in play, and how many tokens are
   excluded from the estimate.

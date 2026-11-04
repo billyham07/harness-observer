@@ -24,7 +24,7 @@ const cols: { label: StringKey; key: keyof (typeof rows.value)[number] }[] = [
   <section class="panel">
     <div class="panel-head">
       <h2>{{ t('panel.lastScan') }}</h2>
-      <span class="muted num path">{{ status?.db ?? '' }}</span>
+      <span class="muted code path">{{ status?.db ?? '' }}</span>
     </div>
     <div class="table-wrap">
       <div v-if="!rows.length" class="empty">{{ t('ingest.none') }}</div>
@@ -51,7 +51,7 @@ const cols: { label: StringKey; key: keyof (typeof rows.value)[number] }[] = [
 
 <style scoped>
 .path {
-  font-size: 10.5px;
+  font-size: 11.5px;
   max-width: 60%;
   overflow: hidden;
   text-overflow: ellipsis;

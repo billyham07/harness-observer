@@ -68,13 +68,18 @@ const breakdowns = computed<Breakdown[]>(() => [
 .overview {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 12px var(--gutter) 48px;
+  gap: 40px;
+  max-width: 1600px;
+  padding: 24px var(--gutter) 64px;
 }
 
 /* Only the very first load dims the page. A background refresh that greys out
  * the numbers every thirty seconds is worse than no indicator at all. */
 .busy {
   opacity: 0.55;
+}
+
+.overview > .page-head {
+  margin-bottom: -16px;
 }
 </style>

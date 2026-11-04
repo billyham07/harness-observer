@@ -85,6 +85,11 @@ export const en = {
   'filters.aria': 'Filters',
   'filters.reset': 'Reset filters',
   'kpis.aria': 'Totals',
+  'summary.head': 'Period summary',
+  'summary.usage': 'Usage',
+  'summary.activity': 'Activity',
+  'summary.pricing': 'Pricing',
+  'summary.unpriced': 'Unpriced tokens',
   clear: 'Clear',
   all: 'All',
   none: '(none)',
@@ -137,7 +142,17 @@ export const en = {
   'anatomy.tokens': 'tokens',
   'anatomy.cost': 'estimated cost',
   'anatomy.read':
-    'The same four buckets, weighed twice. A bucket can be nearly all of the tokens and a fraction of the cost, or the other way round; the ribbons are that difference.',
+    "Relative cost is the bucket's share of cost divided by its share of tokens. Above ×1, each token in that bucket costs more than the average token; below ×1, less.",
+  'anatomy.col.bucket': 'Bucket',
+  'anatomy.col.tokens': 'Tokens',
+  'anatomy.col.share': 'Share of tokens / of cost',
+  'anatomy.col.cost': 'Estimated cost',
+  'anatomy.col.rate': 'Est. $/1M observed',
+  'anatomy.rate.tip':
+    'Estimated cost divided by observed tokens, not a published model rate. Unpriced tokens remain in the denominator; partial estimates are marked *.',
+  'anatomy.col.weight': 'Relative cost',
+  'anatomy.total': 'Total',
+  'anatomy.weight.tip': '{share} of cost from {tokens} of tokens',
 
   'kpi.observed': 'observed tokens',
   'kpi.observed.sub': '{n} = prompt + output',
@@ -203,7 +218,11 @@ export const en = {
   'dim.semantics': 'semantics',
 
   'chart.range': '{from} → {to} · peak {peak} tokens per {bucket}',
-  'chart.aria': 'Stacked token buckets per {bucket}',
+  'chart.aria': '{series} tokens per {bucket}',
+  'trend.total': '{n} total',
+  'trend.peak': 'peak {n} per {bucket}',
+  'trend.read':
+    'One row per bucket, each on its own vertical scale so a small bucket is not flattened by a large one. Time runs to scale; periods with no records are drawn at zero.',
   'empty.range': 'No usage in this range.',
   'empty.rangeHint': 'No usage in this range. Widen the time range or drop a filter.',
   'empty.filters': 'Nothing matches the current filters.',

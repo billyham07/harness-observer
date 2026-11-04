@@ -1,16 +1,19 @@
 /* harness-observer — design tokens.
  *
- * The look is a modern enterprise SaaS console: cool-gray canvas, large-radius
- * cards, generous padding, sentence-case type. Two rules still hold:
+ * The look is a metered utility statement: one brand ink carries the app bar and
+ * every section rule, the workspace is a single flat sheet, and figures are
+ * set like line items on a bill — tabular, right-aligned, read down a column.
+ * Three rules hold:
  *
  *  1. Colour inside plots is a data channel. The four token buckets own every
- *     saturated hue in a chart, legend or the brand mark. Chrome may use one
- *     tech-blue accent for focus, primary actions and a first-card wash, and
- *     that accent is kept off the input-bucket hue so the two cannot be read
- *     as the same thing.
- *  2. Numbers are set in monospace at every size, with tabular figures so
- *     columns of digits line up. Labels are the opposite voice: sentence case,
- *     readable size, quiet.
+ *     saturated hue in a chart, legend or the brand mark. Chrome is printed in
+ *     the brand ink, which is kept dark and low-chroma so it can never be read
+ *     as the input bucket.
+ *  2. Figures use tabular numerals in the interface face, so a column of
+ *     digits lines up without dressing the page in monospace. Monospace is for
+ *     identifiers and paths only (.code).
+ *  3. Structure is drawn with rules, not boxes. A section opens on a heavy
+ *     rule; rows are separated by hairlines; totals close on a double rule.
  *
  * Theme is resolved to an explicit data-theme attribute before first paint, so
  * every token has one definition per theme instead of a media-query copy that
@@ -20,26 +23,39 @@
 :root {
   color-scheme: light;
 
-  --bg: #f5f6fa;
+  /* The sheet. */
+  --bg: #ffffff;
   --surface: #ffffff;
-  --surface-2: #f7f8fa;
-  --surface-3: #eef0f5;
-  --line: #e8eaef;
-  --line-soft: #f0f2f6;
-  --ink: #1d2129;
-  --muted: #4e5969;
-  --faint: #86909c;
+  --surface-2: #f5f6f8;
+  --surface-3: #e9ebf0;
+  --line: #d6d9e0;
+  --line-soft: #eaecf0;
+  --ink: #15171c;
+  --muted: #474c58;
+  --faint: #686d7a;
 
-  /* Chrome accent: indigo, not the input-bucket blue. */
-  --accent: #4c6fff;
-  --accent-soft: rgba(76, 111, 255, 0.1);
+  /* The brand ink: the app bar, section rules, selection and primary actions. */
+  --brand: #1b2340;
+  --on-brand: #eef0f7;
+  --on-brand-muted: #a6acc5;
+  --brand-hover: rgba(255, 255, 255, 0.07);
+  --brand-current: rgba(255, 255, 255, 0.13);
+  --brand-line: rgba(255, 255, 255, 0.12);
+  --rule: #1b2340;
+  /* The app bar is dark in both themes, so its state colours are fixed. */
+  --brand-ok: #3cbf94;
+  --brand-error: #f0736a;
+  --brand-error-text: #f6b1ab;
+
+  --accent: #1b2340;
+  --accent-soft: rgba(27, 35, 64, 0.07);
   --on-accent: #ffffff;
-  --wash: linear-gradient(165deg, #ecefff 0%, #ffffff 64%);
+  --focus: #4f46e5;
 
   --warn: #8a5b0a;
-  --warn-soft: rgba(138, 91, 10, 0.12);
+  --warn-soft: rgba(138, 91, 10, 0.1);
   --error: #a8261c;
-  --error-soft: rgba(168, 38, 28, 0.1);
+  --error-soft: rgba(168, 38, 28, 0.08);
   --ok: #0f7050;
 
   /* Token buckets — mirrored in src/lib/palette.ts, asserted by a unit test. */
@@ -47,45 +63,52 @@
   --c-read: #0f9a7a;
   --c-write: #b0499e;
   --c-output: #b4700f;
+  /* Text set inside a bucket-coloured segment. */
+  --on-bucket: #ffffff;
 
-  --shadow-1: 0 1px 2px rgba(29, 33, 41, 0.04);
-  --shadow-2: 0 8px 28px rgba(29, 33, 41, 0.06);
+  --shadow-pop: 0 6px 24px rgba(21, 23, 28, 0.12), 0 1px 3px rgba(21, 23, 28, 0.08);
 
-  --r-1: 8px;
-  --r-2: 12px;
-  --r-3: 16px;
+  --r-1: 3px;
+  --r-2: 4px;
 
-  --sans: ui-sans-serif, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', 'PingFang SC',
-    'Microsoft YaHei', sans-serif;
+  --sans: system-ui, 'Segoe UI Variable Text', 'Segoe UI', -apple-system, 'Helvetica Neue', 'PingFang SC',
+    'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif;
   --mono: ui-monospace, 'Cascadia Mono', 'SF Mono', 'JetBrains Mono', 'DejaVu Sans Mono', Consolas,
     monospace;
 
-  --rail: 220px;
-  --gutter: 28px;
+  --gutter: 32px;
 }
 
 html[data-theme='dark'] {
   color-scheme: dark;
 
-  --bg: #0e1218;
-  --surface: #151b24;
-  --surface-2: #1b222c;
-  --surface-3: #232b37;
-  --line: #2a3340;
-  --line-soft: #1f2630;
-  --ink: #e8edf4;
-  --muted: #8b97a8;
-  --faint: #6b7789;
+  --bg: #121418;
+  --surface: #17191e;
+  --surface-2: #1d2026;
+  --surface-3: #262a31;
+  --line: #31353e;
+  --line-soft: #23272e;
+  --ink: #e7e9ee;
+  --muted: #a9aeb9;
+  --faint: #8a909c;
 
-  --accent: #7b93ff;
-  --accent-soft: rgba(123, 147, 255, 0.16);
-  --on-accent: #0e1218;
-  --wash: linear-gradient(165deg, rgba(123, 147, 255, 0.16) 0%, #151b24 64%);
+  --brand: #1a2038;
+  --on-brand: #e8eaf4;
+  --on-brand-muted: #9298b3;
+  --brand-hover: rgba(255, 255, 255, 0.05);
+  --brand-current: rgba(255, 255, 255, 0.1);
+  --brand-line: rgba(255, 255, 255, 0.08);
+  --rule: #5a6182;
+
+  --accent: #c8ccef;
+  --accent-soft: rgba(200, 204, 239, 0.1);
+  --on-accent: #121418;
+  --focus: #9a9bf8;
 
   --warn: #d9a05a;
-  --warn-soft: rgba(217, 160, 90, 0.14);
+  --warn-soft: rgba(217, 160, 90, 0.12);
   --error: #f0736a;
-  --error-soft: rgba(240, 115, 106, 0.13);
+  --error-soft: rgba(240, 115, 106, 0.11);
   --ok: #3cbf94;
 
   --c-input: #4b82e6;
@@ -93,8 +116,7 @@ html[data-theme='dark'] {
   --c-write: #be5ca8;
   --c-output: #be7f1e;
 
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-2: 0 10px 32px rgba(0, 0, 0, 0.4);
+  --shadow-pop: 0 8px 28px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .k-input {

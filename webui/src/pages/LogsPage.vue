@@ -121,7 +121,7 @@ const columns = computed<DataTableColumns<LogRow>>(() => [
     title: t('logs.col.session'),
     key: 'session_id',
     width: 130,
-    render: (r) => h('span', { class: 'num', title: r.session_id }, shortId(r.session_id)),
+    render: (r) => h('span', { class: 'code', title: r.session_id }, shortId(r.session_id)),
   },
 ])
 
@@ -213,8 +213,8 @@ function commitSession() {
 .logs {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 12px var(--gutter) 40px;
+  gap: 20px;
+  padding: 24px var(--gutter) 40px;
 }
 
 .toolbar {
@@ -239,8 +239,8 @@ function commitSession() {
 }
 
 .toolbar .muted {
-  padding-bottom: 5px;
-  font-size: 11.5px;
+  padding-bottom: 6px;
+  font-size: 12.5px;
 }
 
 .count {
@@ -253,14 +253,16 @@ function commitSession() {
 
 .table-panel :deep(.n-data-table-th),
 .table-panel :deep(.n-data-table-td) {
-  padding: 9px 12px;
+  padding: 8px 12px;
   font-size: 13px;
+  font-variant-numeric: tabular-nums;
 }
 
 .table-panel :deep(.n-data-table-th) {
   font-size: 12px;
   font-weight: 500;
-  color: var(--faint);
+  color: var(--muted);
+  border-bottom: 1px solid var(--ink);
 }
 
 .table-panel :deep(.is-open td) {

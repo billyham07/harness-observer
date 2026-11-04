@@ -16,6 +16,14 @@ interaction correctness — a date/time range panel with seconds, popovers, a
 drawer, a remote-paginated table — without supplying a visual identity that
 would have to be fought back.
 
+**Subsequent redesign.** The current statement-style layout replaces the
+left rail with top navigation, the composition ribbons with an itemised table,
+and the stacked timeline with four calendar-scaled small multiples. Fresh URLs
+now default to seven days; all-time links explicitly carry `preset=all`.
+See [`dashboard.md`](dashboard.md) and [`webui/DESIGN.md`](../webui/DESIGN.md)
+for the current surface. The migration notes below describe the original
+implementation rather than prescribing its visual layout indefinitely.
+
 **The two composition views are one panel.** Parity asked for token composition
 and estimated cost composition. Both are present, in a single *Anatomy of a
 turn* panel: the same four buckets on two bars of identical geometry, joined

@@ -3,8 +3,10 @@ import { flushPromises } from '@vue/test-utils'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import { defineComponent, h } from 'vue'
 import {
+  DEFAULT_PRESET,
   autoBucket,
   filterParams,
+  hasFilters,
   installQueryState,
   navigate,
   queryObject,
@@ -169,19 +171,47 @@ describe('URL state', () => {
 
     expect(state.sel).toEqual([])
     expect(state.facets.project).toEqual([])
-    expect(state.from).toBe('')
-    expect(state.preset).toBe('all')
+    // Reset means the default window, not all time.
+    expect(state.preset).toBe(DEFAULT_PRESET)
+    expect(state.from).not.toBe('')
+    expect(hasFilters.value).toBe(false)
     // Refresh settings are the user's, not the query's.
     expect(state.auto).toBe(true)
     expect(state.interval).toBe(60)
   })
 
   it('omits empty values from the address bar', async () => {
-    await boot('/?interval=30')
+    await boot('/?preset=all&interval=30')
     const query = queryObject()
     expect(query.from).toBeUndefined()
     expect(query.sel).toBeUndefined()
-    expect(query.preset).toBeUndefined()
     expect(query.interval).toBe('30')
+  })
+
+  it('opens on the last seven days when the address names no range', async () => {
+    const router = await boot('/')
+    const week = presetRange('7d')
+    expect(DEFAULT_PRESET).toBe('7d')
+    expect(state.preset).toBe('7d')
+    expect(state.from.slice(0, 13)).toBe(week.from.slice(0, 13))
+    expect(state.to.slice(0, 13)).toBe(week.to.slice(0, 13))
+    // The default is relative, so the link carries the preset and is
+    // re-evaluated by whoever opens it later.
+    expect(url(router)).toContain('preset=7d')
+    // The default window is where a visit starts, not a filter to reset.
+    expect(hasFilters.value).toBe(false)
+  })
+
+  it('keeps all time as an explicit, bookmarkable choice', async () => {
+    const router = await boot('/?preset=all')
+    expect(state.preset).toBe('all')
+    expect(state.from).toBe('')
+    expect(state.to).toBe('')
+    expect(filterParams().has('from')).toBe(false)
+    expect(url(router)).toContain('preset=all')
+    expect(hasFilters.value).toBe(true)
+
+    setRange('', '', 'all')
+    expect(queryObject().preset).toBe('all')
   })
 })

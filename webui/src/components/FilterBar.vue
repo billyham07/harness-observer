@@ -6,6 +6,7 @@ import { t } from '@/i18n'
 import { hasFilters, resetFilters, state } from '@/composables/useQueryState'
 import FacetFilter from './FacetFilter.vue'
 import HierarchySelector from './HierarchySelector.vue'
+import Icon from './Icon.vue'
 
 /** Whatever is narrowing the numbers is reachable from this one row. */
 const hierarchyLabel = computed(() => {
@@ -22,7 +23,7 @@ const hierarchyLabel = computed(() => {
         <button type="button" class="control wide" :class="{ active: state.sel.length > 0 }">
           <span class="control-label">{{ t('hierarchy.label') }}</span>
           <span class="control-value">{{ hierarchyLabel }}</span>
-          <span class="caret" aria-hidden="true" />
+          <Icon name="chevron-down" class="caret" />
         </button>
       </template>
       <HierarchySelector />
@@ -30,7 +31,7 @@ const hierarchyLabel = computed(() => {
 
     <FacetFilter v-for="dim in FACET_DIMS" :key="dim" :dim="dim" />
 
-    <button type="button" class="btn btn-ghost reset" :disabled="!hasFilters" @click="resetFilters">
+    <button type="button" class="btn btn-ghost reset" :disabled="!hasFilters" @click="resetFilters()">
       {{ t('filters.reset') }}
     </button>
   </nav>
@@ -41,8 +42,17 @@ const hierarchyLabel = computed(() => {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  padding: 8px var(--gutter) 4px;
+  gap: 8px;
+  padding: 10px var(--gutter) 12px;
+}
+
+/* On a narrow window the filters scroll sideways in one row instead of
+ * stacking four rows of chrome above the numbers they narrow. */
+@media (max-width: 720px) {
+  .filterbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
 }
 
 .control.wide {

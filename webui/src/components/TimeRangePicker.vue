@@ -116,7 +116,6 @@ const bucketOptions = computed(() => [
   width: 148px;
   padding: 12px 10px;
   border-right: 1px solid var(--line-soft);
-  background: var(--surface-2);
 }
 
 .presets-label,
@@ -131,20 +130,19 @@ const bucketOptions = computed(() => [
   border-radius: var(--r-1);
   background: transparent;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 13px;
   cursor: pointer;
 }
 
 .preset:hover {
-  background: var(--surface);
+  background: var(--surface-2);
   color: var(--ink);
 }
 
 .preset.on {
-  background: var(--surface);
+  background: var(--accent-soft);
   color: var(--ink);
-  font-weight: 600;
-  box-shadow: var(--shadow-1);
+  font-weight: 650;
 }
 
 .exact {
