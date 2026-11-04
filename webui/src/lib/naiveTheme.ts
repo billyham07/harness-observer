@@ -18,10 +18,11 @@ function build(): GlobalThemeOverrides {
   const surface = read('--surface')
   const line = read('--line')
   const accent = read('--accent')
+  const onAccent = read('--on-accent')
   const muted = read('--muted')
   const common = {
     primaryColor: accent,
-    primaryColorHover: accent,
+    primaryColorHover: read('--focus'),
     primaryColorPressed: accent,
     primaryColorSuppl: accent,
     borderColor: line,
@@ -37,8 +38,8 @@ function build(): GlobalThemeOverrides {
     bodyColor: read('--bg'),
     inputColor: surface,
     hoverColor: read('--surface-2'),
-    borderRadius: read('--r-2') || '12px',
-    borderRadiusSmall: read('--r-1') || '8px',
+    borderRadius: read('--r-2') || '4px',
+    borderRadiusSmall: read('--r-1') || '3px',
     fontFamily: read('--sans'),
     fontFamilyMono: read('--mono'),
     fontSize: '13px',
@@ -47,17 +48,25 @@ function build(): GlobalThemeOverrides {
   }
   return {
     common,
-    DatePicker: { itemFontSize: '12px', calendarTitleFontSize: '12.5px' },
+    DatePicker: {
+      itemFontSize: '12px',
+      calendarTitleFontSize: '12.5px',
+      itemColorActive: accent,
+      itemTextColorActive: onAccent,
+    },
+    Checkbox: { checkMarkColor: onAccent },
+    Button: { textColorPrimary: onAccent, textColorHoverPrimary: onAccent, textColorPressedPrimary: onAccent, textColorFocusPrimary: onAccent },
+    Pagination: { itemTextColorActive: read('--ink'), itemBorderActive: `1px solid ${accent}` },
     DataTable: {
       thColor: surface,
       tdColor: surface,
-      thTextColor: read('--faint'),
+      thTextColor: muted,
       tdColorHover: read('--surface-2'),
       borderColor: read('--line-soft'),
       thFontWeight: '600',
     },
     Drawer: { color: surface },
-    Popover: { color: surface, padding: '0' },
+    Popover: { color: surface, padding: '0', boxShadow: read('--shadow-pop') },
   }
 }
 

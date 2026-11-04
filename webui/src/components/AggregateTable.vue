@@ -5,6 +5,7 @@ import { t, type StringKey } from '@/i18n'
 import { exact, fmt, money } from '@/lib/format'
 import { ALL_COLUMNS, columnValue, type Column } from '@/lib/columns'
 import { COVERAGE_FLOOR, costKnown, costPriced } from '@/composables/usePricing'
+import Icon from './Icon.vue'
 
 const props = defineProps<{ dims: string[]; rows: QueryRow[] }>()
 
@@ -71,7 +72,7 @@ const isPartial = (col: Column, row: QueryRow) =>
             @click="toggleSort(dim)"
           >
             {{ t(`dim.${dim}` as StringKey) }}
-            <span v-if="sort.key === dim" aria-hidden="true">{{ sort.dir < 0 ? '↓' : '↑' }}</span>
+            <Icon v-if="sort.key === dim" :name="sort.dir < 0 ? 'arrow-down' : 'arrow-up'" class="sort-mark" />
           </th>
           <th
             v-for="col in columns"
@@ -81,7 +82,7 @@ const isPartial = (col: Column, row: QueryRow) =>
             @click="toggleSort(col.key)"
           >
             {{ t(col.label) }}
-            <span v-if="sort.key === col.key" aria-hidden="true">{{ sort.dir < 0 ? '↓' : '↑' }}</span>
+            <Icon v-if="sort.key === col.key" :name="sort.dir < 0 ? 'arrow-down' : 'arrow-up'" class="sort-mark" />
           </th>
         </tr>
       </thead>

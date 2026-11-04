@@ -6,6 +6,7 @@ import { t } from '@/i18n'
 import { fmt } from '@/lib/format'
 import { useFilterOptions } from '@/composables/useFilterOptions'
 import { setFacet, state, toggleFacetValue } from '@/composables/useQueryState'
+import Icon from './Icon.vue'
 
 const props = defineProps<{ dim: FacetDim }>()
 
@@ -34,7 +35,7 @@ const summary = computed(() => {
       <button type="button" class="control" :class="{ active: picked.length > 0 }">
         <span class="control-label">{{ label }}</span>
         <span class="control-value">{{ summary }}</span>
-        <span class="caret" aria-hidden="true" />
+        <Icon name="chevron-down" class="caret" />
       </button>
     </template>
 

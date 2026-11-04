@@ -115,7 +115,7 @@ const sections = computed<{ title: string; entries: Entry[] }[]>(() => {
             <template v-for="entry in section.entries" :key="entry.label">
               <dt>{{ entry.label }}</dt>
               <dd>
-                <span class="num" :class="{ unknown: entry.value === '—' }">{{ entry.value }}</span>
+                <span :class="[entry.copy ? 'code' : 'num', { unknown: entry.value === '—' }]">{{ entry.value }}</span>
                 <button
                   v-if="entry.copy"
                   type="button"
@@ -141,24 +141,25 @@ const sections = computed<{ title: string; entries: Entry[] }[]>(() => {
 }
 
 h3 {
-  margin-bottom: 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--line-soft);
+  margin-bottom: 6px;
+  padding: 8px 0 6px;
+  border-top: 2px solid var(--rule);
+  border-bottom: 1px solid var(--line);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 650;
   color: var(--ink);
 }
 
 .kv {
   display: grid;
   grid-template-columns: 118px minmax(0, 1fr);
-  gap: 4px 12px;
+  gap: 5px 12px;
   margin: 0;
-  font-size: 12px;
+  font-size: 12.5px;
 }
 
 .kv dt {
-  color: var(--faint);
+  color: var(--muted);
   overflow-wrap: anywhere;
 }
 
@@ -172,8 +173,9 @@ h3 {
 }
 
 .copy {
-  height: 20px;
+  flex: none;
+  height: 22px;
   padding: 0 6px;
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 </style>

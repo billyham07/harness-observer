@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { FACET_DIMS, type FacetDim } from '@/api/types'
 import { t } from '@/i18n'
 import { setFacet, setLogsSession, setSelection, state } from '@/composables/useQueryState'
+import Icon from './Icon.vue'
 
 interface Chip {
   key: string
@@ -53,7 +54,9 @@ const chips = computed<Chip[]>(() => {
     <span v-for="chip in chips" :key="chip.key" class="chip">
       <span class="dim">{{ chip.dim }}</span>
       <span class="val">{{ chip.value }}</span>
-      <button type="button" :title="t('chip.remove')" @click="chip.remove()">×</button>
+      <button type="button" :title="t('chip.remove')" :aria-label="`${t('chip.remove')}: ${chip.value}`" @click="chip.remove()">
+        <Icon name="close" />
+      </button>
     </span>
   </div>
 </template>
@@ -62,18 +65,19 @@ const chips = computed<Chip[]>(() => {
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  padding: 8px var(--gutter) 4px;
+  gap: 6px;
+  padding: 0 var(--gutter) 12px;
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 4px 6px 4px 10px;
+  gap: 6px;
+  height: 26px;
+  padding: 0 3px 0 8px;
   border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface);
+  border-radius: var(--r-1);
+  background: var(--surface-2);
   font-size: 12.5px;
   max-width: 100%;
 }
@@ -94,16 +98,22 @@ const chips = computed<Chip[]>(() => {
 
 .chip button {
   flex: none;
-  width: 18px;
-  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
   padding: 0;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--r-1);
   background: transparent;
   color: var(--faint);
-  font-size: 13px;
-  line-height: 1;
   cursor: pointer;
+}
+
+.chip button .icon {
+  width: 12px;
+  height: 12px;
 }
 
 .chip button:hover {

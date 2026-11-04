@@ -84,50 +84,62 @@ function onKeydown(event: KeyboardEvent, index: number) {
 </template>
 
 <style scoped>
+/* The tabs are the section's heading: same place, same weight as an h2
+ * elsewhere, with the selected cut underlined in the ink. */
 .head {
-  padding: 14px 16px 0;
-  align-items: center;
+  align-items: flex-end;
+  padding: 0;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line);
 }
 
 .tabs {
-  display: inline-flex;
+  display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 0 20px;
   min-width: 0;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--surface-2);
 }
 
 .tab {
-  padding: 6px 14px;
+  position: relative;
+  padding: 12px 0 10px;
   border: 0;
-  border-radius: 999px;
   background: transparent;
-  color: var(--faint);
-  font-size: 13px;
-  font-weight: 500;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 550;
   white-space: nowrap;
   cursor: pointer;
-  transition:
-    color 0.12s ease,
-    background-color 0.12s ease,
-    box-shadow 0.12s ease;
+  transition: color 0.12s ease;
+}
+
+.tab::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: transparent;
 }
 
 .tab:hover {
-  color: var(--muted);
+  color: var(--ink);
 }
 
 .tab.on {
   color: var(--ink);
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
+  font-weight: 650;
+}
+
+.tab.on::after {
+  background: var(--rule);
 }
 
 .count {
   align-self: center;
   flex: none;
+  font-size: 12.5px;
 }
 
 @media (prefers-reduced-motion: reduce) {

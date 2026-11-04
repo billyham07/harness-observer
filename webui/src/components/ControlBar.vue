@@ -1,22 +1,18 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { NPopover, NSelect, NSwitch } from 'naive-ui'
-import { currentLang, t, toggleLang } from '@/i18n'
+import { t } from '@/i18n'
 import { shortDate } from '@/lib/format'
 import { PRESETS } from '@/lib/time'
-import { setAuto, state } from '@/composables/useQueryState'
+import { rangeChanged, setAuto, state } from '@/composables/useQueryState'
 import { useRefresh } from '@/composables/useRefresh'
-import { useTheme } from '@/composables/useTheme'
+import Icon from './Icon.vue'
 import TimeRangePicker from './TimeRangePicker.vue'
 
-defineProps<{ navOpen: boolean }>()
-const emit = defineEmits<{ (e: 'toggle-nav'): void }>()
-
 const { scanning, scanNow } = useRefresh()
-const { choice, cycle } = useTheme()
 const rangeOpen = ref(false)
 
-const rangeActive = computed(() => !!state.from || !!state.to)
+const rangeActive = rangeChanged
 
 const rangeLabel = computed(() => {
   if (!state.from && !state.to) return t('range.value.all')
@@ -40,17 +36,7 @@ const intervalOptions = computed(() => [
 </script>
 
 <template>
-  <header class="topbar">
-    <button
-      type="button"
-      class="btn nav-toggle"
-      :aria-expanded="navOpen"
-      :title="t('nav.menu')"
-      @click="emit('toggle-nav')"
-    >
-      ☰
-    </button>
-
+  <div class="topbar">
     <NPopover
       v-model:show="rangeOpen"
       trigger="click"
@@ -58,10 +44,11 @@ const intervalOptions = computed(() => [
       :show-arrow="false"
     >
       <template #trigger>
-        <button type="button" class="control" :class="{ active: rangeActive }">
+        <button type="button" class="control range" :class="{ active: rangeActive }">
+          <Icon name="clock" class="range-icon" />
           <span class="control-label">{{ t('range.label') }}</span>
           <span class="control-value">{{ rangeLabel }}</span>
-          <span class="caret" aria-hidden="true" />
+          <Icon name="chevron-down" class="caret" />
         </button>
       </template>
       <TimeRangePicker @done="rangeOpen = false" />
@@ -73,7 +60,7 @@ const intervalOptions = computed(() => [
       <template #trigger>
         <button type="button" class="control" :class="{ active: state.auto }" :title="t('refresh.title')">
           <span class="control-value">{{ refreshLabel }}</span>
-          <span class="caret" aria-hidden="true" />
+          <Icon name="chevron-down" class="caret" />
         </button>
       </template>
       <div class="refresh-pop">
@@ -97,42 +84,41 @@ const intervalOptions = computed(() => [
     </NPopover>
 
     <button type="button" class="btn btn-primary" :disabled="scanning" @click="scanNow()">
+      <Icon name="scan" :class="{ spinning: scanning }" />
       {{ scanning ? t('scan.running') : t('scan.now') }}
     </button>
 
-    <button type="button" class="btn icon" :title="t('lang.title')" @click="toggleLang()">
-      {{ currentLang === 'zh' ? '中' : 'EN' }}
-    </button>
-    <button type="button" class="btn icon" :title="t('theme.title')" @click="cycle()">
-      {{ t(`theme.${choice}` as 'theme.auto') }}
-    </button>
-  </header>
+  </div>
 </template>
 
 <style scoped>
 .topbar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 20px var(--gutter) 8px;
+  gap: 8px;
+  padding: 14px var(--gutter) 0;
 }
 
 .spacer {
   flex: 1;
 }
 
-.icon {
-  min-width: 44px;
-  justify-content: center;
+.range {
+  max-width: 360px;
+}
+
+.range-icon {
   color: var(--muted);
 }
 
-.nav-toggle {
-  display: none;
-  width: 36px;
-  height: 36px;
-  justify-content: center;
-  padding: 0;
+.spinning {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .refresh-pop {
@@ -143,7 +129,7 @@ const intervalOptions = computed(() => [
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 12.5px;
+  font-size: 13px;
   cursor: pointer;
 }
 
@@ -154,9 +140,24 @@ const intervalOptions = computed(() => [
   margin-top: 12px;
 }
 
-@media (max-width: 900px) {
-  .nav-toggle {
-    display: inline-flex;
+@media (max-width: 640px) {
+  .topbar {
+    flex-wrap: wrap;
+    padding-top: 10px;
+  }
+  .range {
+    order: 10;
+    flex: 1 1 100%;
+    max-width: none;
+  }
+  .range .control-label {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinning {
+    animation: none;
   }
 }
 </style>

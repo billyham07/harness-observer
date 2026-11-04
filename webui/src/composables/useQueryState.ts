@@ -5,6 +5,13 @@ import { isPresetKey, presetRange } from '@/lib/time'
 
 export type View = 'overview' | 'logs'
 
+/**
+ * The window a fresh visit opens on. It is a named preset, so it is evaluated
+ * against "now" every time rather than frozen into the URL, and "all time" is
+ * one explicit choice away (?preset=all) rather than the absence of a choice.
+ */
+export const DEFAULT_PRESET = '7d'
+
 export interface QueryState {
   view: View
   /** Local wall-clock instants, or '' for an open end. */
@@ -28,9 +35,8 @@ const emptyFacets = () =>
 
 export const state = reactive<QueryState>({
   view: 'overview',
-  from: '',
-  to: '',
-  preset: 'all',
+  ...presetRange(DEFAULT_PRESET),
+  preset: DEFAULT_PRESET,
   bucket: '',
   sel: [],
   facets: emptyFacets(),
@@ -76,7 +82,9 @@ export function queryObject(): Record<string, string | string[]> {
   if (state.sel.length) query.sel = [...state.sel]
   for (const dim of FACET_DIMS) if (state.facets[dim].length) query[dim] = [...state.facets[dim]]
   if (state.view === 'logs' && state.logsSession) query.session = state.logsSession
-  if (state.preset && state.preset !== 'custom' && state.preset !== 'all') query.preset = state.preset
+  // Every named preset is written, 'all' included: an address with no range
+  // at all means the default window, so "all time" has to say so.
+  if (state.preset && state.preset !== 'custom') query.preset = state.preset
   if (state.bucket) query.bucket = state.bucket
   if (state.auto) query.auto = '1'
   query.interval = String(state.interval)
@@ -92,7 +100,8 @@ export function queryObject(): Record<string, string | string[]> {
  *
  * A named preset is relative, so it is re-evaluated here: a shared "today" link
  * means today for whoever opens it, not the day it was copied. Only a
- * hand-picked range is carried over literally.
+ * hand-picked range is carried over literally, and an address that names no
+ * range at all opens on DEFAULT_PRESET.
  */
 export function readQuery(path: string, query: LocationQuery, now: Date = new Date()) {
   state.view = path.replace(/\/+$/, '') === '/logs' ? 'logs' : 'overview'
@@ -105,8 +114,13 @@ export function readQuery(path: string, query: LocationQuery, now: Date = new Da
     const span = presetRange(preset, now)
     state.from = span.from
     state.to = span.to
+  } else if (state.from || state.to) {
+    state.preset = 'custom'
   } else {
-    state.preset = state.from || state.to ? 'custom' : 'all'
+    state.preset = DEFAULT_PRESET
+    const span = presetRange(DEFAULT_PRESET, now)
+    state.from = span.from
+    state.to = span.to
   }
 
   const bucket = first(query.bucket)
@@ -144,11 +158,14 @@ export function autoBucket(): BucketName {
 /** Changes here mean "re-query"; page-local reading position is not included. */
 export const filterSignature = computed(() => filterParams().toString())
 
-/** True when anything at all is narrowing the numbers. */
+/** True when the range is anything other than the default window. The
+ * default is where a visit starts, not a narrowing the user chose. */
+export const rangeChanged = computed(() => state.preset !== DEFAULT_PRESET)
+
+/** True when anything beyond the default view is narrowing the numbers. */
 export const hasFilters = computed(
   () =>
-    !!state.from ||
-    !!state.to ||
+    rangeChanged.value ||
     state.sel.length > 0 ||
     FACET_DIMS.some((d) => state.facets[d].length > 0) ||
     !!state.logsSession,
@@ -263,12 +280,14 @@ export function setLogsSession(session: string) {
   commit()
 }
 
-/** Reset clears every filter, and nothing else: theme, language and the open
- * page are the user's, not the query's. */
-export function resetFilters() {
-  state.from = ''
-  state.to = ''
-  state.preset = 'all'
+/** Reset clears every filter and returns the range to the default window, and
+ * nothing else: theme, language and the open page are the user's, not the
+ * query's. */
+export function resetFilters(now: Date = new Date()) {
+  const span = presetRange(DEFAULT_PRESET, now)
+  state.from = span.from
+  state.to = span.to
+  state.preset = DEFAULT_PRESET
   state.bucket = ''
   state.sel = []
   state.facets = emptyFacets()

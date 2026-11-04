@@ -6,6 +6,7 @@ import { t } from '@/i18n'
 import { fmt } from '@/lib/format'
 import { visibleTree } from '@/lib/hierarchy'
 import { useFilterOptions } from '@/composables/useFilterOptions'
+import Icon from './Icon.vue'
 
 const { nodes, stale, marks, search, collapsed, toggleNode, clearSelection, dropStale, toggleCollapsed } =
   useFilterOptions()
@@ -91,9 +92,11 @@ function labelFor(node: HierarchyNode, depth: number) {
           type="button"
           class="twisty"
           :title="row.expanded ? t('hierarchy.collapse') : t('hierarchy.expand')"
+          :aria-label="row.expanded ? t('hierarchy.collapse') : t('hierarchy.expand')"
+          :aria-expanded="row.expanded"
           @click="toggleCollapsed(row.node.path)"
         >
-          {{ row.expanded ? '▾' : '▸' }}
+          <Icon :name="row.expanded ? 'chevron-down' : 'chevron-right'" />
         </button>
         <span v-else class="twisty-spacer" />
         <NCheckbox
@@ -159,11 +162,18 @@ function labelFor(node: HierarchyNode, depth: number) {
   height: 16px;
   padding: 0;
   border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   color: var(--faint);
-  font-size: 10px;
-  line-height: 16px;
+  border-radius: var(--r-1);
   cursor: pointer;
+}
+
+.twisty .icon {
+  width: 14px;
+  height: 14px;
 }
 
 .twisty:hover {
