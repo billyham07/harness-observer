@@ -2,7 +2,6 @@ package pricing
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -42,7 +41,11 @@ type Options struct {
 	// Overrides are explicit rates that win over any catalog entry, keyed by
 	// the observed model name.
 	Overrides map[string]Rates
-	// OverridesPath is where Overrides were loaded from, for diagnostics.
+	// OverrideAliases maps an observed model to a published upstream model.
+	// It is local configuration, so aliases such as an internal preview name
+	// never have to be added to the resolver source code.
+	OverrideAliases map[string]string
+	// OverridesPath is where Overrides and OverrideAliases are persisted.
 	OverridesPath string
 	// HeuristicCache derives missing cache rates from the input rate. Off by
 	// default; when on, affected matches carry CacheBasis=heuristic.
@@ -76,6 +79,9 @@ func (o Options) withDefaults() Options {
 	if o.CachePath == "" {
 		o.CachePath = DefaultCachePath()
 	}
+	if o.OverridesPath == "" {
+		o.OverridesPath = DefaultOverridesPath()
+	}
 	if o.Now == nil {
 		o.Now = time.Now
 	}
@@ -104,6 +110,7 @@ type Resolver struct {
 	opts Options
 
 	mu         sync.RWMutex
+	overrideMu sync.Mutex
 	catalog    *Catalog
 	bundled    *Catalog
 	memo       map[string]Match
@@ -121,6 +128,14 @@ func New(opts Options) (*Resolver, error) {
 		return nil, err
 	}
 	r := &Resolver{opts: opts, catalog: bundled, bundled: bundled, memo: map[string]Match{}}
+	// Loading the explicit Options path directly also serves programmatic
+	// callers and tests; OptionsFromEnv follows the same path for the CLI/UI.
+	if rates, aliases, err := loadOverrideFile(opts.OverridesPath); err == nil {
+		if len(rates) > 0 || len(aliases) > 0 || len(r.opts.Overrides) == 0 {
+			r.opts.Overrides = rates
+			r.opts.OverrideAliases = aliases
+		}
+	}
 	if cached, err := loadCache(opts.CachePath); err == nil && cached != nil {
 		// A stale cache still beats no cache: it was a real published table, and
 		// the staleness is reported rather than silently corrected.
@@ -158,7 +173,19 @@ func (r *Resolver) resolve(model string) Match {
 	r.mu.RUnlock()
 
 	m := Match{ObservedModel: model, Basis: BasisUnpriced}
-	if rates, ok := overrides[strings.TrimSpace(model)]; ok {
+	model = strings.TrimSpace(model)
+	if _, hasRates := overrides[model]; hasRates {
+		r.mu.RLock()
+		_, hasAlias := r.opts.OverrideAliases[model]
+		r.mu.RUnlock()
+		if hasAlias {
+			m.Reason = "conflicting local pricing overrides"
+			m.Source = RuleOverride
+			m.SourceVersion = r.opts.OverridesPath
+			return m
+		}
+	}
+	if rates, ok := overrides[model]; ok {
 		m.CanonicalModel = model
 		m.Rule = RuleOverride
 		m.Basis = BasisOverride
@@ -167,7 +194,41 @@ func (r *Resolver) resolve(model string) Match {
 		m.Rates = rates
 		return r.applyCacheBasis(m)
 	}
+	r.mu.RLock()
+	upstream := r.opts.OverrideAliases[model]
+	r.mu.RUnlock()
+	if upstream != "" {
+		m = r.resolveCatalog(upstream)
+		m.ObservedModel = model
+		m.Rule = RuleUpstreamOverride
+		m.Basis = BasisOverride
+		return r.applyCacheBasis(m)
+	}
 
+	key, entry, rule, reason := catalog.lookup(model)
+	if key == "" {
+		m.Reason = reason
+		m.Source = catalog.Source
+		m.SourceVersion = catalog.Version
+		return m
+	}
+	m.CanonicalModel = key
+	m.Provider = entry.Provider
+	m.Rule = rule
+	m.Basis = BasisCatalog
+	m.Source = catalog.Source
+	m.SourceVersion = catalog.Version
+	m.Rates = entry.Rates
+	return r.applyCacheBasis(m)
+}
+
+// resolveCatalog bypasses local overrides. It is used to validate an upstream
+// alias against published evidence and prevents alias chains or cycles.
+func (r *Resolver) resolveCatalog(model string) Match {
+	r.mu.RLock()
+	catalog := r.catalog
+	r.mu.RUnlock()
+	m := Match{ObservedModel: model, Basis: BasisUnpriced}
 	key, entry, rule, reason := catalog.lookup(model)
 	if key == "" {
 		m.Reason = reason
@@ -320,42 +381,11 @@ func (r *Resolver) Status() Status {
 	return st
 }
 
-// LoadOverrides reads a rate override file:
-//
-//	{"models": {"internal-router/some-model": {"input": 1e-6, "output": 3e-6}}}
-//
-// Overrides exist for a catalog entry that is wrong or missing for a known
-// local deployment. An invalid rate is an error, not a silently dropped field.
+// LoadOverrides reads explicit per-model rates from a local override file.
+// Upstream aliases in the same file are loaded by OptionsFromEnv.
 func LoadOverrides(path string) (map[string]Rates, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	var doc struct {
-		Models map[string]Rates `json:"models"`
-	}
-	if err := json.Unmarshal(data, &doc); err != nil {
-		return nil, fmt.Errorf("pricing overrides %s: %w", path, err)
-	}
-	out := make(map[string]Rates, len(doc.Models))
-	for name, rates := range doc.Models {
-		for label, v := range map[string]*float64{
-			"input": rates.Input, "output": rates.Output,
-			"cache_read": rates.CacheRead, "cache_write": rates.CacheWrite,
-		} {
-			if v == nil {
-				continue
-			}
-			if _, ok := validRate(*v); !ok {
-				return nil, fmt.Errorf("pricing overrides %s: model %q has an invalid %s rate %v", path, name, label, *v)
-			}
-		}
-		if rates.Empty() {
-			return nil, fmt.Errorf("pricing overrides %s: model %q has no rates", path, name)
-		}
-		out[name] = rates
-	}
-	return out, nil
+	rates, _, err := loadOverrideFile(path)
+	return rates, err
 }
 
 // OptionsFromEnv builds Options from the environment so the CLI, the API server
@@ -373,6 +403,10 @@ func OptionsFromEnv() (Options, error) {
 	opts.HeuristicCache = envBool("HARNESS_OBSERVER_PRICING_HEURISTIC_CACHE", false)
 	opts.URL = strings.TrimSpace(os.Getenv("HARNESS_OBSERVER_PRICING_URL"))
 	opts.CachePath = strings.TrimSpace(os.Getenv("HARNESS_OBSERVER_PRICING_CACHE"))
+	opts.OverridesPath = strings.TrimSpace(os.Getenv("HARNESS_OBSERVER_PRICING_OVERRIDES"))
+	if opts.OverridesPath == "" {
+		opts.OverridesPath = DefaultOverridesPath()
+	}
 	if v := strings.TrimSpace(os.Getenv("HARNESS_OBSERVER_PRICING_TTL")); v != "" {
 		d, err := time.ParseDuration(v)
 		if err != nil {
@@ -380,14 +414,12 @@ func OptionsFromEnv() (Options, error) {
 		}
 		opts.TTL = d
 	}
-	if v := strings.TrimSpace(os.Getenv("HARNESS_OBSERVER_PRICING_OVERRIDES")); v != "" {
-		overrides, err := LoadOverrides(v)
-		if err != nil {
-			return opts, err
-		}
-		opts.Overrides = overrides
-		opts.OverridesPath = v
+	overrides, aliases, err := loadOverrideFile(opts.OverridesPath)
+	if err != nil {
+		return opts, err
 	}
+	opts.Overrides = overrides
+	opts.OverrideAliases = aliases
 	return opts, nil
 }
 

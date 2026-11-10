@@ -17,8 +17,10 @@ import (
 	"io/fs"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -65,6 +67,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/api/status", s.status)
 	mux.HandleFunc("/api/refresh", s.refresh)
 	mux.HandleFunc("/api/pricing/refresh", s.refreshPricing)
+	mux.HandleFunc("/api/pricing/catalog", s.pricingCatalog)
+	mux.HandleFunc("/api/pricing/overrides", s.pricingOverrides)
 
 	mux.Handle("/", dashboard())
 	return mux
@@ -275,6 +279,69 @@ func (s *Server) refreshPricing(w http.ResponseWriter, r *http.Request) {
 		payload["error"] = err.Error()
 	}
 	writeJSON(w, payload)
+}
+
+// pricingCatalog supplies the model choices for a local upstream alias. The
+// response contains public rates only; no session or usage data is returned.
+func (s *Server) pricingCatalog(w http.ResponseWriter, r *http.Request) {
+	if s.Pricing == nil {
+		http.Error(w, "pricing is not configured", http.StatusNotFound)
+		return
+	}
+	if r.Method != http.MethodGet {
+		http.Error(w, "use GET", http.StatusMethodNotAllowed)
+		return
+	}
+	limit := 200
+	if value := r.URL.Query().Get("limit"); value != "" {
+		if n, err := strconv.Atoi(value); err == nil {
+			limit = n
+		}
+	}
+	models := s.Pricing.CatalogModels(r.URL.Query().Get("q"), limit)
+	writeJSON(w, map[string]any{"models": models, "count": len(models)})
+}
+
+// pricingOverrides is the only write endpoint besides the two refresh
+// triggers. It writes one local JSON config file, never a session or the store.
+func (s *Server) pricingOverrides(w http.ResponseWriter, r *http.Request) {
+	if s.Pricing == nil {
+		http.Error(w, "pricing is not configured", http.StatusNotFound)
+		return
+	}
+	switch r.Method {
+	case http.MethodGet:
+		writeJSON(w, map[string]any{
+			"overrides": s.Pricing.Overrides(),
+			"path":      s.Pricing.Status().OverridesPath,
+		})
+	case http.MethodPut:
+		var override pricing.Override
+		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10))
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(&override); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		match, err := s.Pricing.SetOverride(override)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		writeJSON(w, map[string]any{"match": match, "status": s.Pricing.Status()})
+	case http.MethodDelete:
+		if err := s.Pricing.DeleteOverride(r.URL.Query().Get("model")); err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				http.Error(w, "no local override for this model", http.StatusNotFound)
+			} else {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			}
+			return
+		}
+		writeJSON(w, map[string]any{"deleted": true, "status": s.Pricing.Status()})
+	default:
+		http.Error(w, "use GET, PUT or DELETE", http.StatusMethodNotAllowed)
+	}
 }
 
 // Status is what the dashboard shows about freshness.

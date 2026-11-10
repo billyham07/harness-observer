@@ -189,6 +189,34 @@ export interface PricingResponse {
   status?: PricingStatus
 }
 
+export interface PricingRates {
+  input?: number
+  output?: number
+  cache_read?: number
+  cache_write?: number
+}
+
+export interface CatalogModel {
+  model: string
+  provider: string
+  rates: PricingRates
+}
+
+export interface PricingOverride {
+  model: string
+  upstream?: string
+  rates?: PricingRates
+}
+
+export interface UnpricedModel {
+  observed_model: string
+  provider?: string
+  harness?: string
+  observed_tokens: number
+  turns: number
+  reason?: string
+}
+
 export interface IngestStats {
   source: string
   roots: string[]

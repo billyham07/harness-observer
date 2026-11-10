@@ -6,6 +6,7 @@ import AggregateTable from '@/components/AggregateTable.vue'
 import BreakdownTabs, { type Breakdown } from '@/components/BreakdownTabs.vue'
 import IngestPanel from '@/components/IngestPanel.vue'
 import KpiBand from '@/components/KpiBand.vue'
+import PricingPanel from '@/components/PricingPanel.vue'
 import TurnAnatomy from '@/components/TurnAnatomy.vue'
 import { useOverview } from '@/composables/useOverview'
 import { filterSignature } from '@/composables/useQueryState'
@@ -59,6 +60,8 @@ const breakdowns = computed<Breakdown[]>(() => [
     </section>
 
     <BreakdownTabs :breakdowns="breakdowns" />
+
+    <PricingPanel @saved="load" />
 
     <IngestPanel />
   </div>

@@ -1,10 +1,13 @@
 import type {
+  CatalogModel,
   FacetsResponse,
   Hierarchy,
   IngestStatus,
   LogPage,
+  PricingOverride,
   PricingResponse,
   QueryResponse,
+  UnpricedModel,
 } from './types'
 
 /** Scalar values a request accepts as an extra query parameter. */
@@ -50,6 +53,20 @@ export async function getJSON<T>(
   return (await res.json()) as T
 }
 
+/** sendJSON is used only for local settings and explicit refresh actions. */
+async function sendJSON<T>(path: string, method: 'POST' | 'PUT' | 'DELETE', body?: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method,
+    headers: { Accept: 'application/json', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const detail = (await res.text()).trim()
+    throw new ApiError(detail || res.statusText, res.status)
+  }
+  return (await res.json()) as T
+}
+
 export const api = {
   query: (params: URLSearchParams, extra?: Record<string, Param>, signal?: AbortSignal) =>
     getJSON<QueryResponse>('/api/query', params, extra, signal),
@@ -67,6 +84,27 @@ export const api = {
     getJSON<PricingResponse>('/api/pricing', params, {}, signal).catch(
       () => ({ available: false }) as PricingResponse,
     ),
+
+  pricingCatalog: (query = '', limit = 200) =>
+    getJSON<{ models: CatalogModel[]; count: number }>(
+      '/api/pricing/catalog',
+      new URLSearchParams(),
+      { q: query, limit },
+    ),
+
+  pricingOverrides: () =>
+    getJSON<{ overrides: PricingOverride[]; path: string }>('/api/pricing/overrides', new URLSearchParams()),
+
+  unpricedModels: (params: URLSearchParams, signal?: AbortSignal) =>
+    getJSON<{ models: UnpricedModel[]; count: number }>('/api/pricing/unpriced', params, { limit: 100 }, signal),
+
+  savePricingOverride: (override: PricingOverride) =>
+    sendJSON<unknown>('/api/pricing/overrides', 'PUT', override),
+
+  deletePricingOverride: (model: string) =>
+    sendJSON<unknown>(`/api/pricing/overrides?model=${encodeURIComponent(model)}`, 'DELETE'),
+
+  refreshPricing: () => sendJSON<{ status?: unknown; error?: string }>('/api/pricing/refresh', 'POST'),
 
   status: (signal?: AbortSignal) => getJSON<IngestStatus>('/api/status', new URLSearchParams(), {}, signal),
 

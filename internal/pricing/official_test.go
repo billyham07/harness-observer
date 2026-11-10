@@ -84,6 +84,15 @@ func TestOfficialNamespacesUseCompleteModelID(t *testing.T) {
 		{"claude-new-model", "anthropic/claude-new-model"},
 		{"gpt-new-model", "openai/gpt-new-model"},
 		{"claude-4.6-opus", "anthropic/claude-opus-4-6"},
+		{"claude-5.2-fable", "anthropic/claude-fable-5-2"},
+		{"claude-fable-5.2", "anthropic/claude-fable-5-2"},
+		{"kimi-k3.1-pro", "moonshot/kimi-k3.1-pro"},
+		{"glm-5.3-flash", "zai/glm-5.3-flash"},
+		{"qwen3.8-max", "dashscope/qwen3.8-max"},
+		{"deepseek-new-model", "deepseek/deepseek-new-model"},
+		{"minimax-new-model", "minimax/minimax-new-model"},
+		{"mistral-new-model", "mistral/mistral-new-model"},
+		{"claude-ocx-aigw_local--glm-5.3-flash", "zai/glm-5.3-flash"},
 	} {
 		t.Run(tc.observed, func(t *testing.T) {
 			catalog := newCatalog(SourceBundled, "test", time.Time{}, map[string]Entry{

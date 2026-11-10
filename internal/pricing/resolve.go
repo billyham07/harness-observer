@@ -23,6 +23,7 @@ const (
 // substring match, so a new "gpt-5.7-sol" can never be priced as "gpt-5.6-sol".
 const (
 	RuleOverride         = "explicit-override"
+	RuleUpstreamOverride = "upstream-model-override"
 	RuleExact            = "exact"
 	RuleSeparator        = "separator-normalized"
 	RuleProviderPrefix   = "provider-prefix"
@@ -75,9 +76,7 @@ func (m Match) Priced() bool { return m.Basis != BasisUnpriced && !m.Rates.Empty
 // "-build" (summary/signals keep "grok-4.6"). That is not xai/grok-build-0.1,
 // a different catalog product.
 var aliases = map[string]string{
-	"gpt-4o-latest":  "gpt-4o",
-	"grok-4.6-build": "xai/grok-4.6",
-	"grok-4.5-build": "xai/grok-4.5",
+	"gpt-4o-latest": "gpt-4o",
 }
 
 // officialNamespaces defines the API-equivalent comparison baseline, not the
@@ -86,9 +85,36 @@ var aliases = map[string]string{
 // a variant or reasoning suffix to find an official rate.
 var officialNamespaces = []struct{ family, namespace string }{
 	{"gemini-", "gemini/"},
+	{"gemma-", "gemini/"},
 	{"grok-", "xai/"},
 	{"claude-", "anthropic/"},
 	{"gpt-", "openai/"},
+	{"o1-", "openai/"},
+	{"o3-", "openai/"},
+	{"o4-", "openai/"},
+	{"chatgpt-", "openai/"},
+	{"kimi-", "moonshot/"},
+	{"moonshot-", "moonshot/"},
+	{"glm-", "zai/"},
+	{"qwen", "dashscope/"},
+	{"qwq-", "dashscope/"},
+	{"deepseek-", "deepseek/"},
+	{"minimax-", "minimax/"},
+	{"mistral-", "mistral/"},
+	{"codestral-", "mistral/"},
+	{"ministral-", "mistral/"},
+	{"pixtral-", "mistral/"},
+	{"magistral-", "mistral/"},
+	{"devstral-", "mistral/"},
+	{"command-", "cohere_chat/"},
+	{"c4ai-", "cohere_chat/"},
+	{"jamba-", "ai21/"},
+	{"nova-", "amazon-nova/"},
+	{"doubao-", "volcengine/"},
+	{"mimo-", "xiaomi_mimo/"},
+	{"mercury-", "inception/"},
+	{"swe-", "cognition/"},
+	{"step-", "stepfun/"},
 }
 
 var (
@@ -97,10 +123,16 @@ var (
 	// at the same price. Nothing else is stripped.
 	dateSuffix = regexp.MustCompile(`-(\d{4}-\d{2}-\d{2}|\d{8})$`)
 
-	// vendorReorder covers Anthropic's two spellings of one model:
-	// "claude-4.6-opus" (marketing order) and "claude-opus-4-6" (API order).
-	// Both appear in real harness transcripts.
-	vendorReorder = regexp.MustCompile(`^claude-(\d+)[.\-](\d+)-(opus|sonnet|haiku)((?:-.*)?)$`)
+	// grokBuild matches Grok Build's runtime modelUsage key ("grok-4.7-build"),
+	// which is the public Grok model id plus "-build", not the separate
+	// xai/grok-build-* catalog product.
+	grokBuild = regexp.MustCompile(`^(grok-\d+(?:[.\-]\d+)*)-build$`)
+
+	// vendorReorder covers Anthropic's spellings of one model:
+	// "claude-4.6-opus" (marketing order), "claude-opus-4.6" (dot version) and
+	// "claude-opus-4-6" (API order). All appear in real harness transcripts.
+	vendorReorder = regexp.MustCompile(`^claude-(\d+)[.\-](\d+)-(opus|sonnet|haiku|fable)((?:-.*)?)$`)
+	claudeDotVer  = regexp.MustCompile(`^claude-(opus|sonnet|haiku|fable)-(\d+)\.(\d+)((?:-.*)?)$`)
 )
 
 type candidate struct {
@@ -141,7 +173,7 @@ func candidates(observed string) []candidate {
 			add(rewrite(name), rule)
 		}
 	}
-	expand(func(name string) string { return aliases[strings.ToLower(name)] }, RuleAlias)
+	expand(canonicalAlias, RuleAlias)
 	expand(reorderVendorName, RuleVendorReorder)
 	expand(func(name string) string {
 		stripped := dateSuffix.ReplaceAllString(name, "")
@@ -168,12 +200,26 @@ func normalizeSeparators(name string) string {
 	return strings.Trim(replaced, "/")
 }
 
-func reorderVendorName(name string) string {
-	m := vendorReorder.FindStringSubmatch(strings.ToLower(name))
-	if m == nil {
-		return ""
+func canonicalAlias(name string) string {
+	lower := strings.ToLower(name)
+	if target, ok := aliases[lower]; ok {
+		return target
 	}
-	return fmt.Sprintf("claude-%s-%s-%s%s", m[3], m[1], m[2], m[4])
+	if m := grokBuild.FindStringSubmatch(lower); m != nil {
+		return "xai/" + m[1]
+	}
+	return ""
+}
+
+func reorderVendorName(name string) string {
+	lower := strings.ToLower(name)
+	if m := vendorReorder.FindStringSubmatch(lower); m != nil {
+		return fmt.Sprintf("claude-%s-%s-%s%s", m[3], m[1], m[2], m[4])
+	}
+	if m := claudeDotVer.FindStringSubmatch(lower); m != nil {
+		return fmt.Sprintf("claude-%s-%s-%s%s", m[1], m[2], m[3], m[4])
+	}
+	return ""
 }
 
 // lookup finds the catalog entry for an observed model name.
@@ -209,7 +255,7 @@ func (c *Catalog) lookup(observed string) (string, Entry, string, string) {
 	officialModel := false
 	for _, cand := range append([]candidate{{name: name, rule: RuleExact}}, list...) {
 		bare := strings.ToLower(cand.name)
-		if strings.Contains(bare, "/") {
+		if strings.Contains(normalizeSeparators(bare), "/") {
 			continue
 		}
 		for _, vendor := range officialNamespaces {

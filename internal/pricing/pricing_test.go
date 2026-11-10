@@ -71,8 +71,10 @@ func TestResolveRules(t *testing.T) {
 	}{
 		{"gpt-5.6-sol", "gpt-5.6-sol", RuleExact, BasisCatalog},
 		{"claude-opus-5", "claude-opus-5", RuleExact, BasisCatalog},
+		{"claude-fable-5-2", "claude-fable-5-2", RuleExact, BasisCatalog},
 		{"xai/grok-4.6", "xai/grok-4.6", RuleExact, BasisCatalog},
 		// Grok Build records the public model as "<id>-build" in modelUsage.
+		{"grok-4.7-build", "xai/grok-4.7", RuleAlias, BasisCatalog},
 		{"grok-4.6-build", "xai/grok-4.6", RuleAlias, BasisCatalog},
 		{"grok-4.5-build", "xai/grok-4.5", RuleAlias, BasisCatalog},
 		// Gateway/routing prefixes describe how a call was routed, not what was
@@ -80,12 +82,19 @@ func TestResolveRules(t *testing.T) {
 		{"aigw_local/deepseek-v4-flash", "deepseek-v4-flash", RuleProviderPrefix, BasisCatalog},
 		{"google-antigravity/gemini-3.6-flash", "gemini-3.6-flash", RuleProviderPrefix, BasisCatalog},
 		{"openai-codex:gpt-5.5", "gpt-5.5", RuleProviderPrefix, BasisCatalog},
-		// Anthropic's two spellings of one model.
+		// Anthropic's spellings of one model.
 		{"anthropic--claude-4.6-opus", "claude-opus-4-6", RuleVendorReorder, BasisCatalog},
+		{"claude-5.2-fable", "claude-fable-5-2", RuleVendorReorder, BasisCatalog},
+		{"claude-fable-5.2", "claude-fable-5-2", RuleVendorReorder, BasisCatalog},
 		{"GPT-5.5", "gpt-5.5", RuleCaseInsensitive, BasisCatalog},
 		// Resellers may disagree; bare vendor ids use the official API baseline.
 		{"grok-4.5", "xai/grok-4.5", RuleOfficialProvider, BasisCatalog},
 		{"gemini-4-argon", "gemini/gemini-4-argon", RuleOfficialProvider, BasisCatalog},
+		{"kimi-k3.1-pro", "moonshot/kimi-k3.1-pro", RuleOfficialProvider, BasisCatalog},
+		{"glm-5.3-flash", "zai/glm-5.3-flash", RuleOfficialProvider, BasisCatalog},
+		{"aigw_local/glm-5.3-flash", "zai/glm-5.3-flash", RuleOfficialProvider, BasisCatalog},
+		{"claude-ocx-aigw_local--glm-5.3-flash", "zai/glm-5.3-flash", RuleOfficialProvider, BasisCatalog},
+		{"qwen3.8-max", "dashscope/qwen3.8-max", RuleOfficialProvider, BasisCatalog},
 	}
 	for _, tc := range cases {
 		m := r.Resolve(tc.observed)
