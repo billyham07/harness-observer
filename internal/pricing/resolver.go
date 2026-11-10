@@ -128,9 +128,12 @@ func New(opts Options) (*Resolver, error) {
 		return nil, err
 	}
 	r := &Resolver{opts: opts, catalog: bundled, bundled: bundled, memo: map[string]Match{}}
+	// Explicit maps represent configuration already loaded by the caller. In
+	// that case there is no second implicit file load to replace them.
+	explicitOverrides := len(opts.Overrides) > 0 || len(opts.OverrideAliases) > 0
 	// Loading the explicit Options path directly also serves programmatic
 	// callers and tests; OptionsFromEnv follows the same path for the CLI/UI.
-	if rates, aliases, err := loadOverrideFile(opts.OverridesPath); err == nil {
+	if rates, aliases, err := loadOverrideFile(opts.OverridesPath); err == nil && !explicitOverrides {
 		if len(rates) > 0 || len(aliases) > 0 || len(r.opts.Overrides) == 0 {
 			r.opts.Overrides = rates
 			r.opts.OverrideAliases = aliases

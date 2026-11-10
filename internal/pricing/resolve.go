@@ -111,6 +111,8 @@ var officialNamespaces = []struct{ family, namespace string }{
 	{"jamba-", "ai21/"},
 	{"nova-", "amazon-nova/"},
 	{"doubao-", "volcengine/"},
+	{"hy4", "tencent/"},
+	{"hunyuan-", "tencent/"},
 	{"mimo-", "xiaomi_mimo/"},
 	{"mercury-", "inception/"},
 	{"swe-", "cognition/"},

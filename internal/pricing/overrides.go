@@ -285,7 +285,7 @@ func (r *Resolver) catalogEntry(key string) Entry {
 var firstPartyProviders = map[string]bool{
 	"openai": true, "anthropic": true, "gemini": true,
 	"vertex_ai-language-models": true, "xai": true, "deepseek": true,
-	"moonshot": true, "zai": true, "dashscope": true, "minimax": true,
+	"moonshot": true, "zai": true, "dashscope": true, "minimax": true, "tencent": true,
 	"mistral": true, "codestral": true, "cohere": true, "cohere_chat": true,
 	"ai21": true, "amazon_nova": true, "volcengine": true,
 	"bedrock": true, "bedrock_converse": true,

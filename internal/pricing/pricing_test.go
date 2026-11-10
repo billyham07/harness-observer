@@ -17,6 +17,9 @@ func newTestResolver(t *testing.T, opts Options) *Resolver {
 		// Never touch the user's real cache from a test.
 		opts.CachePath = filepath.Join(t.TempDir(), "pricing-catalog.json")
 	}
+	if opts.OverridesPath == "" {
+		opts.OverridesPath = filepath.Join(t.TempDir(), "pricing-overrides.json")
+	}
 	r, err := New(opts)
 	if err != nil {
 		t.Fatalf("New: %v", err)
@@ -95,6 +98,8 @@ func TestResolveRules(t *testing.T) {
 		{"aigw_local/glm-5.3-flash", "zai/glm-5.3-flash", RuleOfficialProvider, BasisCatalog},
 		{"claude-ocx-aigw_local--glm-5.3-flash", "zai/glm-5.3-flash", RuleOfficialProvider, BasisCatalog},
 		{"qwen3.8-max", "dashscope/qwen3.8-max", RuleOfficialProvider, BasisCatalog},
+		{"hy4", "tencent/hy4", RuleOfficialProvider, BasisCatalog},
+		{"hy4-preview", "tencent/hy4-preview", RuleOfficialProvider, BasisCatalog},
 	}
 	for _, tc := range cases {
 		m := r.Resolve(tc.observed)

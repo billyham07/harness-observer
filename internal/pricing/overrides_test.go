@@ -97,6 +97,8 @@ func TestCatalogModelsOnlyOffersFirstPartyRates(t *testing.T) {
 		"moonshot/kimi-k3": {Provider: "moonshot", Rates: Rates{Input: rate(3e-6)}},
 		"kyma/kimi-k3":     {Provider: "kyma", Rates: Rates{Input: rate(9e-6)}},
 		"claude-fable-5-2": {Provider: "anthropic", Rates: Rates{Input: rate(8e-6)}},
+		"tencent/hy4":      {Provider: "tencent", Rates: Rates{Input: rate(8.34e-7)}},
+		"kyma/hy4":         {Provider: "kyma", Rates: Rates{Input: rate(9e-6)}},
 	})
 	models := r.CatalogModels("kimi", 10)
 	if len(models) != 1 || models[0].Model != "moonshot/kimi-k3" {
@@ -104,5 +106,8 @@ func TestCatalogModelsOnlyOffersFirstPartyRates(t *testing.T) {
 	}
 	if got := r.CatalogModels("fable", 10); len(got) != 1 || got[0].Model != "claude-fable-5-2" {
 		t.Fatalf("bare first-party model was omitted: %+v", got)
+	}
+	if got := r.CatalogModels("hy4", 10); len(got) != 1 || got[0].Model != "tencent/hy4" {
+		t.Fatalf("Tencent's official model was omitted or a reseller leaked in: %+v", got)
 	}
 }

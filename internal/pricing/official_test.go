@@ -89,6 +89,8 @@ func TestOfficialNamespacesUseCompleteModelID(t *testing.T) {
 		{"kimi-k3.1-pro", "moonshot/kimi-k3.1-pro"},
 		{"glm-5.3-flash", "zai/glm-5.3-flash"},
 		{"qwen3.8-max", "dashscope/qwen3.8-max"},
+		{"hy4free", "tencent/hy4free"},
+		{"hunyuan-new-model", "tencent/hunyuan-new-model"},
 		{"deepseek-new-model", "deepseek/deepseek-new-model"},
 		{"minimax-new-model", "minimax/minimax-new-model"},
 		{"mistral-new-model", "mistral/mistral-new-model"},
